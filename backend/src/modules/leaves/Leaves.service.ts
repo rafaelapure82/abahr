@@ -1,14 +1,14 @@
 ﻿import { prisma } from '../../config/prisma';
 import { parsePagination, paginate } from '../../common/utils/response';
 import { NotFound } from '../../common/utils/apiError';
-import type { BenefitsQuery } from './Benefits.types';
+import type { LeavesQuery } from './Leaves.types';
 
-export class BenefitsService {
-  async findAll(query: BenefitsQuery) {
+export class LeavesService {
+  async findAll(query: LeavesQuery) {
     const { page, limit, skip } = parsePagination(query);
     // TODO: implement filters
     const [data, total] = await Promise.all([
-      (prisma as any)['Benefits'.replace(/s$/, '')]?.findMany?.({ skip, take: limit }) ?? [],
+      (prisma as any)['Leaves'.replace(/s$/, '')]?.findMany?.({ skip, take: limit }) ?? [],
       0,
     ]);
     return { data, meta: paginate(total, page, limit) };
@@ -35,4 +35,4 @@ export class BenefitsService {
   }
 }
 
-export const BenefitsService = new BenefitsService();
+export const LeavesService = new LeavesService();
