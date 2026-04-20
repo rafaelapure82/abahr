@@ -1,0 +1,54 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+
+# TypeScript
+dist/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Prisma
+!prisma/schema.prisma
+
+# Uploads (keep directory, ignore files)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Angular
+frontend/.angular/
+frontend/dist/
+
+# Docker SSL certs
+docker/nginx/ssl/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# OS temp
+*.tmp
+*.temp
+scripts/tmp/
