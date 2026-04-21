@@ -2,82 +2,35 @@ import { Router } from 'express';
 import { PerformanceController } from './Performance.controller';
 import { authJWT } from '../../middlewares/authJWT';
 import { rbac } from '../../middlewares/rbac';
-import { validate } from '../../middlewares/validate';
-import { 
-  createReviewCycleSchema, 
-  selfReviewSchema, 
-  managerReviewSchema, 
-  goalSchema,
-  performanceQuerySchema 
-} from './Performance.types';
 
-export const performanceRouter = Router();
+const router = Router();
 
+router.use(authJWT);
 
-// All routes require authentication
-performanceRouter.use(authJWT);
+// Templates
+router.post('/templates', rbac(['MANAGE:PERFORMANCE', 'MANAGE:ALL']), PerformanceController.createTemplate);
+router.get('/templates', PerformanceController.getTemplates);
 
-// ── Cycles ──────────────────────────────────────────────────────────────────
+// Cycles & Reviews
+router.post('/cycles', rbac(['MANAGE:PERFORMANCE', 'MANAGE:ALL']), PerformanceController.createCycle);
+router.get('/reviews', rbac(['MANAGE:PERFORMANCE', 'MANAGE:ALL']), PerformanceController.listReviews);
+router.get('/reviews/:id', PerformanceController.getReview);
 
-performanceRouter.post(
-  '/cycles', 
-  rbac(['MANAGE:PERFORMANCE', 'MANAGE:ALL']), 
-  validate(createReviewCycleSchema), 
-  PerformanceController.createCycle
-);
+// Feedback Actions
+router.post('/reviews/:id/submit-self', PerformanceController.submitSelf);
+router.post('/reviews/:id/submit-manager', rbac(['MANAGE:PERFORMANCE', 'MANAGE:ALL']), PerformanceController.submitManager);
+router.post('/reviews/:id/share', rbac(['MANAGE:PERFORMANCE', 'MANAGE:ALL']), PerformanceController.share);
 
-// ── Reviews ─────────────────────────────────────────────────────────────────
+// 360 Feedback
+router.post('/reviews/:id/request-feedback', rbac(['MANAGE:PERFORMANCE', 'MANAGE:ALL']), PerformanceController.requestFeedback);
+router.post('/feedback/:id/submit', PerformanceController.submitFeedback);
 
-performanceRouter.get(
-  '/reviews', 
-  rbac(['READ:PERFORMANCE', 'MANAGE:ALL']), 
-  validate(performanceQuerySchema, 'query'),
-  PerformanceController.listReviews
-);
+// Reports
+router.get('/reports/:employeeId', rbac(['MANAGE:PERFORMANCE', 'MANAGE:ALL']), PerformanceController.getReport);
 
-performanceRouter.get(
-  '/reviews/:id', 
-  PerformanceController.getReview
-);
+// Goals
+router.get('/goals', PerformanceController.listGoals);
+router.post('/goals', PerformanceController.upsertGoal);
+router.put('/goals/:id', PerformanceController.upsertGoal);
 
-performanceRouter.patch(
-  '/reviews/:id/self', 
-  validate(selfReviewSchema),
-  PerformanceController.submitSelf
-);
-
-performanceRouter.patch(
-  '/reviews/:id/manager', 
-  rbac(['MANAGE:PERFORMANCE', 'MANAGE:ALL']), // Or custom logic for direct manager
-  validate(managerReviewSchema),
-  PerformanceController.submitManager
-);
-
-performanceRouter.patch(
-  '/reviews/:id/share', 
-  rbac(['MANAGE:PERFORMANCE', 'MANAGE:ALL']), 
-  PerformanceController.share
-);
-
-// ── Goals ───────────────────────────────────────────────────────────────────
-
-performanceRouter.get(
-  '/goals', 
-  PerformanceController.listGoals
-);
-
-performanceRouter.post(
-  '/goals', 
-  validate(goalSchema),
-  PerformanceController.upsertGoal
-);
-
-performanceRouter.patch(
-  '/goals/:id', 
-  validate(goalSchema),
-  PerformanceController.upsertGoal
-);
-
-
-
-
+export const performanceRouter = router;

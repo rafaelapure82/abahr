@@ -5,6 +5,7 @@ import { NotFound, BadRequest } from '../../common/utils/apiError';
 import { notificationsService } from '../notifications/Notifications.service';
 import { calculateNetLeaveDays } from '../../common/utils/dateUtils';
 import { holidaysService } from '../holidays/Holidays.service';
+import { webhooksService } from '../webhooks/Webhooks.service';
 import type { 
   LeaveRequestDto, LeaveReviewDto, LeavesQuery, LeavePolicyDto 
 } from './Leaves.types';
@@ -160,6 +161,9 @@ export class LeavesService {
           message: `Tu solicitud para el ${request.startDate.toLocaleDateString()} ha sido aprobada.`,
           data: { status: 'APPROVED', days: Number(request.daysRequested) }
         });
+
+        // Webhook Trigger
+        await webhooksService.trigger('LEAVE_APPROVED', updated);
       } else if (dto.status === 'REJECTED') {
         // Return Pending to allocated (well, just decrement pending)
         const year = request.startDate.getFullYear();

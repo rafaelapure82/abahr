@@ -36,6 +36,7 @@ import { dashboardRouter }     from './modules/dashboard/Dashboard.routes';
 import { reportsRouter }       from './modules/reports/Reports.routes';
 import { webhooksRouter }      from './modules/webhooks/Webhooks.routes';
 import holidaysRouter        from './modules/holidays/Holidays.routes';
+import exportsRouter         from './modules/exports/Exports.routes';
 
 // ═══════════════════════════════════════════════════════════════════
 //  APP FACTORY
@@ -124,6 +125,7 @@ export function createApp(): { app: Application; io: SocketIO; httpServer: Serve
   app.use(`${API}/reports`,       reportsRouter);
   app.use(`${API}/webhooks`,      webhooksRouter);
   app.use(`${API}/holidays`,      holidaysRouter);
+  app.use(`${API}/exports`,       exportsRouter);
 
   // ── Error handling (must be last) ─────────────────────────────────────
   app.use(notFoundHandler);

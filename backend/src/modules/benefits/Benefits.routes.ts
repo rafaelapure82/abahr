@@ -1,27 +1,21 @@
 import { Router } from 'express';
-import { Role } from '@prisma/client';
 import { BenefitsController } from './Benefits.controller';
 import { authJWT } from '../../middlewares/authJWT';
 import { rbac } from '../../middlewares/rbac';
-import { validate } from '../../middlewares/validate';
-import { BenefitsQuerySchema } from './Benefits.types';
 
-export const benefitsRouter = Router();
+const router = Router();
 
+router.use(authJWT);
 
-benefitsRouter.use(authJWT);
+// Plans
+router.post('/plans', rbac(['MANAGE:BENEFITS', 'MANAGE:ALL']), BenefitsController.createPlan);
+router.get('/plans', BenefitsController.listPlans);
+router.get('/plans/:id', BenefitsController.getPlan);
+router.delete('/plans/:id', rbac(['MANAGE:BENEFITS', 'MANAGE:ALL']), BenefitsController.deletePlan);
 
-benefitsRouter.get(
-  '/',
-  rbac(['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER', 'DEPARTMENT_MANAGER']),
-  validate(BenefitsQuerySchema, 'query'),
-  BenefitsController.list,
-);
+// Enrollments
+router.post('/enroll', BenefitsController.enroll);
+router.get('/employee/:employeeId', BenefitsController.listEmployeeBenefits);
+router.patch('/enrollments/:id/status', rbac(['MANAGE:BENEFITS', 'MANAGE:ALL']), BenefitsController.updateStatus);
 
-benefitsRouter.get('/:id',  BenefitsController.show);
-benefitsRouter.post('/',    rbac(['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER']), BenefitsController.create);
-benefitsRouter.patch('/:id',rbac(['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER']), BenefitsController.update);
-benefitsRouter.delete('/:id',rbac(['SUPER_ADMIN', 'HR_ADMIN']), BenefitsController.remove);
-
-
-
+export const benefitsRouter = router;

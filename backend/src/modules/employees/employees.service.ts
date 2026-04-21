@@ -5,6 +5,7 @@ import { env } from '../../config/env';
 import { Conflict, NotFound } from '../../common/utils/apiError';
 import { parsePagination, paginate } from '../../common/utils/response';
 import { storageService } from '../../common/services/storage.service';
+import { webhooksService } from '../webhooks/Webhooks.service';
 import type { FileData } from '../../common/services/storage.service';
 import type { 
   CreateEmployeeDto, UpdateEmployeeDto, 
@@ -125,6 +126,9 @@ export class EmployeesService {
 
     // Initial Audit Log
     await this.logAudit(creatorId, 'CREATE', 'Employee', employee.id, null, employee);
+
+    // Webhook Trigger
+    await webhooksService.trigger('EMPLOYEE_CREATED', employee);
 
     return employee;
   }

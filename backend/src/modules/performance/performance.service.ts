@@ -2,7 +2,13 @@ import { prisma } from '../../config/prisma';
 import { parsePagination, paginate } from '../../common/utils/response';
 import { NotFound, BadRequest } from '../../common/utils/apiError';
 import type { 
-  CreateReviewCycleDto, SelfReviewDto, ManagerReviewDto, GoalDto, PerformanceQuery 
+  CreateReviewCycleDto, 
+  SelfReviewDto, 
+  ManagerReviewDto, 
+  GoalDto, 
+  PerformanceQuery,
+  CreateTemplateDto,
+  Feedback360Dto
 } from './Performance.types';
 import { PerformanceRating } from '@prisma/client';
 
@@ -16,85 +22,144 @@ const RATING_MAP: Record<PerformanceRating, number> = {
 
 export class PerformanceService {
   
-  /**
-   * Create Cycle & Generate Reviews (Nivel Dios)
-   */
+  // ── Templates ─────────────────────────────────────────────────────────────
+
+  async createTemplate(dto: CreateTemplateDto) {
+    return prisma.reviewTemplate.create({
+      data: {
+        name: dto.name,
+        description: dto.description,
+        criteria: {
+          create: dto.criteria
+        }
+      },
+      include: { criteria: true }
+    });
+  }
+
+  async getTemplates() {
+    return prisma.reviewTemplate.findMany({ where: { isActive: true } });
+  }
+
+  // ── Cycles & Reviews ──────────────────────────────────────────────────────
+
   async createCycle(dto: CreateReviewCycleDto) {
     return prisma.$transaction(async (tx) => {
-      const cycle = await tx.reviewCycle.create({ data: dto });
+      const cycle = await tx.reviewCycle.create({ 
+        data: {
+          name: dto.name,
+          startDate: new Date(dto.startDate),
+          endDate: new Date(dto.endDate),
+          dueDate: new Date(dto.dueDate),
+          templateId: dto.templateId
+        } 
+      });
+
+      // Get template criteria if provided
+      const templateCriteria = dto.templateId 
+        ? await tx.templateCriterion.findMany({ where: { templateId: dto.templateId } })
+        : [];
 
       // Identify active employees and their managers
       const employees = await tx.employee.findMany({
         where: { employmentStatus: 'ACTIVE', deletedAt: null, managerId: { not: null } }
       });
 
-      // Bulk create reviews
-      const reviews = await Promise.all(employees.map(emp => 
-        tx.performanceReview.create({
+      // Create reviews and copy criteria
+      for (const emp of employees) {
+        const review = await tx.performanceReview.create({
           data: {
             cycleId: cycle.id,
             employeeId: emp.id,
             reviewerId: emp.managerId!,
             status: 'SELF_REVIEW'
           }
-        })
-      ));
+        });
 
-      return { cycle, reviewsCount: reviews.length };
+        if (templateCriteria.length > 0) {
+          await tx.reviewCriterion.createMany({
+            data: templateCriteria.map(c => ({
+              reviewId: review.id,
+              name: c.name,
+              description: c.description,
+              weight: c.weight
+            }))
+          });
+        }
+      }
+
+      return { cycle, reviewsCount: employees.length };
     });
   }
 
-  /**
-   * Self Review Submission
-   */
   async submitSelfReview(reviewId: string, employeeId: string, dto: SelfReviewDto) {
     const review = await prisma.performanceReview.findUnique({ where: { id: reviewId } });
     if (!review || review.employeeId !== employeeId) throw NotFound('Review');
     if (review.status !== 'SELF_REVIEW') throw BadRequest('Cycle is not in Self-Review stage');
 
-    return prisma.performanceReview.update({
-      where: { id: reviewId },
-      data: {
-        selfRating: dto.selfRating,
-        selfComments: dto.selfComments,
-        status: 'MANAGER_REVIEW'
+    return prisma.$transaction(async (tx) => {
+      // Update individual criteria self ratings if provided
+      if (dto.criteria) {
+        for (const c of dto.criteria) {
+          await tx.reviewCriterion.update({
+            where: { id: c.criterionId },
+            data: { selfRating: c.selfRating, selfComment: c.selfComment }
+          });
+        }
       }
+
+      return tx.performanceReview.update({
+        where: { id: reviewId },
+        data: {
+          selfRating: dto.selfRating,
+          selfComments: dto.selfComments,
+          status: 'MANAGER_REVIEW'
+        }
+      });
     });
   }
 
-  /**
-   * Manager Review (Nivel Dios: Weighted Scoring)
-   */
   async submitManagerReview(reviewId: string, managerId: string, dto: ManagerReviewDto) {
-    const review = await prisma.performanceReview.findUnique({ where: { id: reviewId } });
+    const review = await prisma.performanceReview.findUnique({ 
+      where: { id: reviewId },
+      include: { criteria: true }
+    });
     if (!review || review.reviewerId !== managerId) throw NotFound('Review');
 
     // Calculate overall score based on criteria weights
     let totalWeight = 0;
     let weightedSum = 0;
 
-    dto.criteria.forEach(c => {
+    const criteriaUpdates = dto.criteria.map(c => {
+      const dbCriterion = review.criteria.find(dc => dc.id === c.criterionId);
+      const weight = dbCriterion?.weight || 1;
       const ratingValue = RATING_MAP[c.managerRating];
-      weightedSum += ratingValue * c.weight;
-      totalWeight += c.weight;
+      
+      weightedSum += ratingValue * weight;
+      totalWeight += weight;
+
+      return {
+        id: c.criterionId,
+        managerRating: c.managerRating,
+        managerComment: c.managerComment,
+        score: ratingValue
+      };
     });
 
     const overallScore = totalWeight > 0 ? (weightedSum / totalWeight) : 0;
 
     return prisma.$transaction(async (tx) => {
-      // 1. Upsert Criteria
-      await Promise.all(dto.criteria.map(c => 
-        tx.reviewCriterion.create({
+      // 1. Update Criteria
+      for (const cu of criteriaUpdates) {
+        await tx.reviewCriterion.update({
+          where: { id: cu.id },
           data: {
-            reviewId,
-            name: c.name,
-            weight: c.weight,
-            managerRating: c.managerRating,
-            managerComment: c.managerComment,
-            score: RATING_MAP[c.managerRating]
+            managerRating: cu.managerRating,
+            managerComment: cu.managerComment,
+            score: cu.score
           }
-        })
-      ));
+        });
+      }
 
       // 2. Update Review
       return tx.performanceReview.update({
@@ -111,30 +176,56 @@ export class PerformanceService {
     });
   }
 
-  async getReviewDetails(id: string) {
-    const review = await prisma.performanceReview.findUnique({
-      where: { id },
-      include: {
-        employee: { select: { firstName: true, lastName: true, id: true } },
-        reviewer: { select: { firstName: true, lastName: true } },
-        criteria: true,
-        goals: true,
-        cycle: true
+  // ── 360 Feedback ──────────────────────────────────────────────────────────
+
+  async requestPeerFeedback(reviewId: string, giverId: string) {
+    const review = await prisma.performanceReview.findUnique({ where: { id: reviewId } });
+    if (!review) throw NotFound('Review');
+
+    return prisma.feedback360.create({
+      data: {
+        reviewId,
+        giverId,
+        receiverId: review.employeeId,
+        relationship: 'PEER'
       }
     });
+  }
 
-    if (!review) throw NotFound('Performance Review');
-    
-    // Nivel Dios: Automatically link current active goals if not already linked
-    if (review.goals.length === 0) {
-      const activeGoals = await prisma.goal.findMany({
-        where: { employeeId: review.employeeId, status: { not: 'COMPLETED' } }
-      });
-      // Logic would be to associate them or just return them for context
-      (review as any).currentGoals = activeGoals;
-    }
+  async submitFeedback360(id: string, giverId: string, dto: Partial<Feedback360Dto>) {
+    const feedback = await prisma.feedback360.findUnique({ where: { id } });
+    if (!feedback || feedback.giverId !== giverId) throw NotFound('Feedback request');
 
-    return review;
+    return prisma.feedback360.update({
+      where: { id },
+      data: {
+        ...dto,
+        submittedAt: new Date()
+      }
+    });
+  }
+
+  // ── Reports & Queries ─────────────────────────────────────────────────────
+
+  async getDevelopmentReport(employeeId: string) {
+    const reviews = await prisma.performanceReview.findMany({
+      where: { employeeId, status: 'COMPLETED' },
+      include: { cycle: true, criteria: true, goals: true },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    });
+
+    // Simple trend calculation
+    const scores = reviews.map(r => Number(r.overallScore || 0)).reverse();
+    const averageScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+
+    return {
+      employeeId,
+      recentReviews: reviews,
+      scoreTrend: scores,
+      averageScore,
+      summary: `Employee has completed ${reviews.length} review cycles with an average score of ${averageScore.toFixed(2)}/5.`
+    };
   }
 
   async shareWithEmployee(id: string) {
@@ -142,6 +233,22 @@ export class PerformanceService {
       where: { id },
       data: { isSharedWithEmployee: true, sharedAt: new Date(), status: 'COMPLETED' }
     });
+  }
+
+  async findReviewById(id: string) {
+    const review = await prisma.performanceReview.findUnique({
+      where: { id },
+      include: {
+        employee: { select: { firstName: true, lastName: true, id: true, jobTitle: true } },
+        reviewer: { select: { firstName: true, lastName: true } },
+        criteria: true,
+        goals: true,
+        cycle: true,
+        feedback360: { include: { giver: { select: { firstName: true, lastName: true } } } }
+      }
+    });
+    if (!review) throw NotFound('Performance Review');
+    return review;
   }
 
   async findAll(query: PerformanceQuery) {
@@ -167,13 +274,17 @@ export class PerformanceService {
     return { data, meta: paginate(total, page, limit) };
   }
 
-  // ── OKR / Goals Management ───────────────────────────────────────────────────
-
   async upsertGoal(employeeId: string, dto: GoalDto, goalId?: string) {
+    const data = {
+      ...dto,
+      startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+      dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+    };
+
     if (goalId) {
-      return prisma.goal.update({ where: { id: goalId }, data: dto });
+      return prisma.goal.update({ where: { id: goalId }, data });
     }
-    return prisma.goal.create({ data: { ...dto, employeeId } });
+    return prisma.goal.create({ data: { ...data, employeeId } });
   }
 
   async getGoals(employeeId: string) {
@@ -182,6 +293,3 @@ export class PerformanceService {
 }
 
 export const performanceService = new PerformanceService();
-
-
-

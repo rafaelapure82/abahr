@@ -1,31 +1,29 @@
 import { Router } from 'express';
-import { Role } from '@prisma/client';
-import { RecruitmentController } from './Recruitment.controller';
+import { recruitmentController } from './Recruitment.controller';
 import { authJWT } from '../../middlewares/authJWT';
 import { rbac } from '../../middlewares/rbac';
-import { validate } from '../../middlewares/validate';
-import { RecruitmentQuerySchema } from './Recruitment.types';
+import { upload } from '../../middlewares/upload';
 
-export const recruitmentRouter = Router();
+const router = Router();
 
+// Publicly accessible (e.g. for external job board)
+router.get('/jobs', recruitmentController.getAllJobs);
+router.get('/jobs/:id', recruitmentController.getJob);
+router.post('/apply', recruitmentController.apply);
 
+// Protected routes (HR/Admin only)
+router.use(authJWT);
 
-recruitmentRouter.use(authJWT);
+// Job Management
+router.post('/jobs', rbac(['MANAGE:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.createJob);
+router.patch('/jobs/:id', rbac(['MANAGE:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.updateJob);
+router.delete('/jobs/:id', rbac(['MANAGE:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.deleteJob);
 
-const ADMIN_ROLES = ['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER'];
-const ALL_ROLES = [...ADMIN_ROLES, 'DEPARTMENT_MANAGER'];
+// Application & Selection Pipeline
+router.get('/applications/:id', rbac(['READ:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.getApplication);
+router.get('/jobs/:jobId/applications', rbac(['READ:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.getJobApplications);
+router.post('/applications/:id/move', rbac(['MANAGE:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.moveStage);
+router.post('/applications/:id/interview', rbac(['MANAGE:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.scheduleInterview);
+router.post('/candidates/:candidateId/resume', upload.single('resume'), recruitmentController.uploadResume);
 
-recruitmentRouter.get(
-  '/',
-  rbac(ALL_ROLES),
-  validate(RecruitmentQuerySchema, 'query'),
-  RecruitmentController.list,
-);
-
-recruitmentRouter.get('/:id',  RecruitmentController.show);
-recruitmentRouter.post('/',    rbac(ADMIN_ROLES), RecruitmentController.create);
-recruitmentRouter.patch('/:id', rbac(ADMIN_ROLES), RecruitmentController.update);
-recruitmentRouter.delete('/:id', rbac(['SUPER_ADMIN', 'HR_ADMIN']), RecruitmentController.remove);
-
-
-
+export { router as recruitmentRouter };

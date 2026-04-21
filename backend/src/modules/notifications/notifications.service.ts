@@ -2,6 +2,9 @@ import { prisma } from '../../config/prisma';
 import { parsePagination, paginate } from '../../common/utils/response';
 import { NotFound } from '../../common/utils/apiError';
 import type { CreateNotificationDto, NotificationsQuery } from './Notifications.types';
+import { notificationQueue } from '../../common/queues/notification.queue';
+import { emailService } from '../../common/services/email.service';
+import { logger } from '../../config/logger';
 
 export class NotificationsService {
   
@@ -20,11 +23,23 @@ export class NotificationsService {
       }
     });
 
-    // Real-time (Socket.IO)
-    // We expect the 'io' instance to be available globally or via a setter
-    // For now, we'll try to emit if a global holder is implemented later, 
-    // or we'll use the app.get('io') in controllers.
-    // In service level, we can use a small event emitter that controllers listen to.
+    // 2. If it is an EMAIL notification, queue it
+    if (dto.channel === 'EMAIL' || dto.channel === 'BOTH') {
+      const user = await prisma.user.findUnique({ where: { id: dto.userId } });
+      if (user?.email) {
+        await notificationQueue.add('EMAIL', {
+          type: 'EMAIL',
+          payload: {
+            to: user.email,
+            subject: dto.title,
+            text: dto.message,
+            html: `<p>${dto.message}</p>` // Basic wrapper, can be improved
+          }
+        });
+      }
+    }
+
+    // 3. Real-time (Socket.IO) would go here
     
     return notification;
   }

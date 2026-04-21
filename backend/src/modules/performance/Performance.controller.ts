@@ -5,6 +5,18 @@ import { performanceService } from './Performance.service';
 
 export class PerformanceController {
   
+  // ── Templates ─────────────────────────────────────────────────────────────
+
+  static createTemplate = asyncHandler(async (req: Request, res: Response) => {
+    const template = await performanceService.createTemplate(req.body);
+    sendCreated(res, template, 'Evaluation template created');
+  });
+
+  static getTemplates = asyncHandler(async (req: Request, res: Response) => {
+    const templates = await performanceService.getTemplates();
+    sendOk(res, templates);
+  });
+
   // ── Cycles & Reviews ──────────────────────────────────────────────────────
   
   static createCycle = asyncHandler(async (req: Request, res: Response) => {
@@ -14,25 +26,25 @@ export class PerformanceController {
 
   static listReviews = asyncHandler(async (req: Request, res: Response) => {
     const query = { ...req.query } as any;
-    // Basic multi-role isolation: if not admin, only show related reviews
-    // (Actual isolation ideally happens at service layer with user context)
     const result = await performanceService.findAll(query);
     sendOk(res, result);
   });
 
   static getReview = asyncHandler(async (req: Request, res: Response) => {
-    const review = await performanceService.getReviewDetails(req.params.id);
+    const review = await performanceService.findReviewById(req.params.id);
     sendOk(res, review);
   });
 
   static submitSelf = asyncHandler(async (req: Request, res: Response) => {
-    const employeeId = req.user!.id; // Mapping User to Employee needed here ideally
+    // In a real scenario, we'd lookup the employeeId from req.user.id
+    // For now, we assume the frontend sends the employeeId or it's handled by middleware
+    const employeeId = req.body.employeeId || req.user!.id; 
     const result = await performanceService.submitSelfReview(req.params.id, employeeId, req.body);
     sendOk(res, result, 'Self-review submitted successfully');
   });
 
   static submitManager = asyncHandler(async (req: Request, res: Response) => {
-    const managerId = req.user!.id;
+    const managerId = req.body.managerId || req.user!.id;
     const result = await performanceService.submitManagerReview(req.params.id, managerId, req.body);
     sendOk(res, result, 'Manager evaluation completed');
   });
@@ -40,6 +52,26 @@ export class PerformanceController {
   static share = asyncHandler(async (req: Request, res: Response) => {
     const result = await performanceService.shareWithEmployee(req.params.id);
     sendOk(res, result, 'Review shared with employee');
+  });
+
+  // ── 360 Feedback ──────────────────────────────────────────────────────────
+
+  static requestFeedback = asyncHandler(async (req: Request, res: Response) => {
+    const result = await performanceService.requestPeerFeedback(req.params.id, req.body.giverId);
+    sendCreated(res, result, '360 feedback requested');
+  });
+
+  static submitFeedback = asyncHandler(async (req: Request, res: Response) => {
+    const giverId = req.body.giverId || req.user!.id;
+    const result = await performanceService.submitFeedback360(req.params.id, giverId, req.body);
+    sendOk(res, result, 'Peer feedback submitted');
+  });
+
+  // ── Reports ───────────────────────────────────────────────────────────────
+
+  static getReport = asyncHandler(async (req: Request, res: Response) => {
+    const report = await performanceService.getDevelopmentReport(req.params.employeeId);
+    sendOk(res, report);
   });
 
   // ── Goals / OKRs ─────────────────────────────────────────────────────────
@@ -52,11 +84,8 @@ export class PerformanceController {
 
   static upsertGoal = asyncHandler(async (req: Request, res: Response) => {
     const employeeId = req.body.employeeId || req.user!.id;
-    const goalId = req.params.id; // optional from route
+    const goalId = req.params.id; 
     const goal = await performanceService.upsertGoal(employeeId, req.body, goalId);
     sendOk(res, goal, goalId ? 'Goal updated' : 'Goal created');
   });
 }
-
-
-
