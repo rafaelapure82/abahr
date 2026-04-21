@@ -24,7 +24,7 @@ export const validate =
     }
 
     // Replace with coerced / transformed values
-    (req as Record<string, unknown>)[section] = result.data;
+    (req as any)[section] = result.data;
     next();
   };
 

@@ -22,16 +22,8 @@ datasource db {
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 // ─── Auth & Roles ──────────────────────────────────────────────────────────
-enum Role {
-  SUPER_ADMIN         // Full system access
-  HR_ADMIN            // Manages all HR functions
-  HR_MANAGER          // HR team lead
-  DEPARTMENT_MANAGER  // Manages specific dept
-  PAYROLL_ADMIN       // Payroll only
-  RECRUITER           // Recruitment pipeline
-  EMPLOYEE            // Self-service portal
-  VIEWER              // Read-only
-}
+// Enum removed – roles are now dynamic via the 'roles' table.
+// Seed script will populate default roles.
 
 // ─── Employee ─────────────────────────────────────────────────────────────
 enum EmploymentType {
@@ -252,11 +244,11 @@ enum ReviewStatus {
 }
 
 enum PerformanceRating {
-  EXCEPTIONAL        // 5
-  EXCEEDS            // 4
-  MEETS              // 3
-  NEEDS_IMPROVEMENT  // 2
-  UNSATISFACTORY     // 1
+  EXCEPTIONAL // 5
+  EXCEEDS // 4
+  MEETS // 3
+  NEEDS_IMPROVEMENT // 2
+  UNSATISFACTORY // 1
 }
 
 enum GoalStatus {
@@ -378,35 +370,86 @@ enum WebhookStatus {
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 model User {
-  id                String    @id @default(uuid())
-  email             String    @unique
-  passwordHash      String
-  role              Role      @default(EMPLOYEE)
-  isActive          Boolean   @default(true)
-  isEmailVerified   Boolean   @default(false)
-  emailVerifyToken  String?
-  passwordResetToken    String?
-  passwordResetExpires  DateTime?
-  lastLoginAt       DateTime?
-  lastLoginIp       String?
-  loginAttempts     Int       @default(0)
-  lockedUntil       DateTime?
-  refreshToken      String?
-  mfaEnabled        Boolean   @default(false)
-  mfaSecret         String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?                  // soft delete
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  passwordHash         String
+  // role              Role      @default(EMPLOYEE)  // REMOVED: using UserRole relation
+  isActive             Boolean   @default(true)
+  isEmailVerified      Boolean   @default(false)
+  emailVerifyToken     String?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  lastLoginAt          DateTime?
+  lastLoginIp          String?
+  loginAttempts        Int       @default(0)
+  lockedUntil          DateTime?
+  refreshToken         String?
+  mfaEnabled           Boolean   @default(false)
+  mfaSecret            String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime? // soft delete
 
   // Relations
-  employee          Employee?
-  notifications     Notification[]
-  auditLogs         AuditLog[]
-  webhookConfigs    WebhookConfig[]
+  roles          UserRole[]
+  employee       Employee?
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+  webhookConfigs WebhookConfig[]
 
   @@index([email])
   @@index([deletedAt])
   @@map("users")
+}
+
+model Role {
+  id          String  @id @default(uuid())
+  name        String  @unique // e.g. "SUPER_ADMIN", "HR_MANAGER"
+  description String?
+  isSystem    Boolean @default(false) // true for default roles that shouldn't be deleted
+
+  permissions RolePermission[]
+  users       UserRole[]
+
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  deletedAt                DateTime?
+  onboardingTemplateTasks  OnboardingTemplateTask[]
+  offboardingTemplateTasks OffboardingTemplateTask[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  action      String // e.g. "CREATE", "READ", "UPDATE", "DELETE", "MANAGE", "APPROVE"
+  resource    String // e.g. "EMPLOYEE", "PAYROLL", "LEAVE", "SETTINGS"
+  description String?
+
+  roles RolePermission[]
+
+  @@unique([action, resource])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════╗
@@ -414,84 +457,84 @@ model User {
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 model Employee {
-  id                  String           @id @default(uuid())
-  employeeCode        String           @unique   // e.g. EMP-0042
-  userId              String           @unique
-  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String @id @default(uuid())
+  employeeCode String @unique // e.g. EMP-0042
+  userId       String @unique
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // ── Personal Information ──────────────────────────────────────────────────
-  firstName           String
-  middleName          String?
-  lastName            String
-  displayName         String?
-  gender              Gender?
-  dateOfBirth         DateTime?        @db.Date
-  maritalStatus       MaritalStatus?
-  bloodType           BloodType?
-  nationality         String?
-  ethnicity           String?
+  firstName     String
+  middleName    String?
+  lastName      String
+  displayName   String?
+  gender        Gender?
+  dateOfBirth   DateTime?      @db.Date
+  maritalStatus MaritalStatus?
+  bloodType     BloodType?
+  nationality   String?
+  ethnicity     String?
 
   // ── Contact ───────────────────────────────────────────────────────────────
-  workPhone           String?
-  personalPhone       String?
-  workEmail           String?          // alias, different from login email
-  personalEmail       String?
-  linkedinUrl         String?
+  workPhone     String?
+  personalPhone String?
+  workEmail     String? // alias, different from login email
+  personalEmail String?
+  linkedinUrl   String?
 
   // ── Address ───────────────────────────────────────────────────────────────
-  addressLine1        String?
-  addressLine2        String?
-  city                String?
-  state               String?
-  postalCode          String?
-  country             String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String?
 
   // ── Emergency Contact ─────────────────────────────────────────────────────
-  emergencyName       String?
-  emergencyPhone      String?
-  emergencyRelation   String?
+  emergencyName     String?
+  emergencyPhone    String?
+  emergencyRelation String?
 
   // ── Avatar ────────────────────────────────────────────────────────────────
-  avatarUrl           String?
+  avatarUrl String?
 
   // ── Employment ────────────────────────────────────────────────────────────
-  jobTitle            String
-  employmentType      EmploymentType   @default(FULL_TIME)
-  employmentStatus    EmploymentStatus @default(PROBATION)
-  hireDate            DateTime         @default(now()) @db.Date
-  probationEndDate    DateTime?        @db.Date
-  terminationDate     DateTime?        @db.Date
-  terminationReason   String?
+  jobTitle          String
+  employmentType    EmploymentType   @default(FULL_TIME)
+  employmentStatus  EmploymentStatus @default(PROBATION)
+  hireDate          DateTime         @default(now()) @db.Date
+  probationEndDate  DateTime?        @db.Date
+  terminationDate   DateTime?        @db.Date
+  terminationReason String?
 
   // ── Org Structure ─────────────────────────────────────────────────────────
-  departmentId        String?
-  department          Department?      @relation(fields: [departmentId], references: [id])
-  positionId          String?
-  position            Position?        @relation(fields: [positionId], references: [id])
-  managerId           String?
-  manager             Employee?        @relation("ReportsTo", fields: [managerId], references: [id])
-  directReports       Employee[]       @relation("ReportsTo")
-  locationId          String?
-  location            OfficeLocation?  @relation(fields: [locationId], references: [id])
+  departmentId  String?
+  department    Department?     @relation(fields: [departmentId], references: [id])
+  positionId    String?
+  position      Position?       @relation(fields: [positionId], references: [id])
+  managerId     String?
+  manager       Employee?       @relation("ReportsTo", fields: [managerId], references: [id])
+  directReports Employee[]      @relation("ReportsTo")
+  locationId    String?
+  location      OfficeLocation? @relation(fields: [locationId], references: [id])
 
   // ── Compensation ──────────────────────────────────────────────────────────
-  baseSalary          Decimal          @default(0) @db.Decimal(14, 2)
-  currency            String           @default("USD")
-  salaryFrequency     PayrollFrequency @default(MONTHLY)
-  bankName            String?
-  bankAccountNumber   String?
-  bankRoutingNumber   String?
-  taxId               String?
+  baseSalary        Decimal          @default(0) @db.Decimal(14, 2)
+  currency          String           @default("USD")
+  salaryFrequency   PayrollFrequency @default(MONTHLY)
+  bankName          String?
+  bankAccountNumber String?
+  bankRoutingNumber String?
+  taxId             String?
 
   // ── Work Settings ─────────────────────────────────────────────────────────
-  workSchedule        String?          // JSON: { mon-fri: "09:00-18:00" }
-  isRemote            Boolean          @default(false)
-  timeZone            String           @default("UTC")
+  workSchedule String? // JSON: { mon-fri: "09:00-18:00" }
+  isRemote     Boolean @default(false)
+  timeZone     String  @default("UTC")
 
   // Soft delete
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
-  deletedAt           DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // ── Relations ────────────────────────────────────────────────────────────
   documents           Document[]
@@ -501,13 +544,13 @@ model Employee {
   payrollItems        PayrollItem[]
   onboarding          Onboarding?
   offboarding         Offboarding?
-  performanceReviews  PerformanceReview[]      @relation("RevieweeReviews")
-  reviewsGiven        PerformanceReview[]      @relation("ReviewerReviews")
+  performanceReviews  PerformanceReview[]  @relation("RevieweeReviews")
+  reviewsGiven        PerformanceReview[]  @relation("ReviewerReviews")
   goals               Goal[]
-  feedbackGiven       Feedback360[]            @relation("FeedbackGiver")
-  feedbackReceived    Feedback360[]            @relation("FeedbackReceiver")
+  feedbackGiven       Feedback360[]        @relation("FeedbackGiver")
+  feedbackReceived    Feedback360[]        @relation("FeedbackReceiver")
   benefits            EmployeeBenefit[]
-  jobApplications     JobApplication[]         @relation("RecruiterApplications")
+  jobApplications     JobApplication[]     @relation("RecruiterApplications")
   salaryHistories     SalaryHistory[]
   disciplinaryActions DisciplinaryAction[]
   orgChartNodes       OrgChartNode[]
@@ -521,16 +564,16 @@ model Employee {
 
 // ── Salary history ─────────────────────────────────────────────────────────
 model SalaryHistory {
-  id            String    @id @default(uuid())
-  employeeId    String
-  employee      Employee  @relation(fields: [employeeId], references: [id])
+  id             String   @id @default(uuid())
+  employeeId     String
+  employee       Employee @relation(fields: [employeeId], references: [id])
   previousSalary Decimal  @db.Decimal(14, 2)
-  newSalary     Decimal   @db.Decimal(14, 2)
-  currency      String    @default("USD")
-  reason        String?
-  effectiveDate DateTime  @db.Date
-  approvedBy    String?
-  createdAt     DateTime  @default(now())
+  newSalary      Decimal  @db.Decimal(14, 2)
+  currency       String   @default("USD")
+  reason         String?
+  effectiveDate  DateTime @db.Date
+  approvedBy     String?
+  createdAt      DateTime @default(now())
 
   @@map("salary_histories")
 }
@@ -540,7 +583,7 @@ model DisciplinaryAction {
   id          String    @id @default(uuid())
   employeeId  String
   employee    Employee  @relation(fields: [employeeId], references: [id])
-  type        String    // warning, pip, suspension, termination
+  type        String // warning, pip, suspension, termination
   description String
   issuedBy    String?
   issuedAt    DateTime  @default(now())
@@ -556,30 +599,32 @@ model DisciplinaryAction {
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 model Department {
-  id          String       @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
-  code        String       @unique
+  code        String  @unique
   description String?
-  color       String?      // hex for org chart UI
+  color       String? // hex for org chart UI
   icon        String?
+  overtimeRate Float   @default(1.5)
 
   // Hierarchy
-  parentId    String?
-  parent      Department?  @relation("SubDepartments", fields: [parentId], references: [id])
-  children    Department[] @relation("SubDepartments")
+  parentId String?
+  parent   Department?  @relation("SubDepartments", fields: [parentId], references: [id])
+  children Department[] @relation("SubDepartments")
 
   // Manager
-  headId      String?      // Employee.id — circular reference avoided via raw string
+  headId String? // Employee.id — circular reference avoided via raw string
 
-  isActive    Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  employees   Employee[]
-  positions   Position[]
-  payrolls    Payroll[]
-  orgChartNodes OrgChartNode[]
+  employees      Employee[]
+  positions      Position[]
+  payrolls       Payroll[]
+  orgChartNodes  OrgChartNode[]
+  payrollPeriods PayrollPeriod[]
 
   @@index([parentId])
   @@index([deletedAt])
@@ -587,37 +632,40 @@ model Department {
 }
 
 model Position {
-  id           String      @id @default(uuid())
+  id           String     @id @default(uuid())
   title        String
-  code         String      @unique
+  code         String     @unique
   description  String?
   departmentId String
-  department   Department  @relation(fields: [departmentId], references: [id])
-  level        Int         @default(1)   // seniority level
-  minSalary    Decimal?    @db.Decimal(14, 2)
-  maxSalary    Decimal?    @db.Decimal(14, 2)
-  isActive     Boolean     @default(true)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  department   Department @relation(fields: [departmentId], references: [id])
+  level        Int        @default(1) // seniority level
+  minSalary    Decimal?   @db.Decimal(14, 2)
+  maxSalary    Decimal?   @db.Decimal(14, 2)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   deletedAt    DateTime?
 
-  employees    Employee[]
+  employees Employee[]
 
   @@map("positions")
 }
 
 model OfficeLocation {
-  id        String     @id @default(uuid())
+  id        String   @id @default(uuid())
   name      String
-  code      String     @unique
+  code      String   @unique
   address   String?
   city      String?
   country   String?
-  timeZone  String     @default("UTC")
-  isHQ      Boolean    @default(false)
-  isActive  Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  timeZone  String   @default("UTC")
+  isHQ      Boolean  @default(false)
+  latitude  Float?
+  longitude Float?
+  radius    Int      @default(500) // validation radius in meters
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   employees Employee[]
 
@@ -626,17 +674,17 @@ model OfficeLocation {
 
 // ── Organization Chart ─────────────────────────────────────────────────────
 model OrgChartNode {
-  id           String      @id @default(uuid())
+  id           String         @id @default(uuid())
   employeeId   String
-  employee     Employee    @relation(fields: [employeeId], references: [id])
+  employee     Employee       @relation(fields: [employeeId], references: [id])
   departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id])
+  department   Department?    @relation(fields: [departmentId], references: [id])
   parentNodeId String?
   parentNode   OrgChartNode?  @relation("OrgNodeChildren", fields: [parentNodeId], references: [id])
   childNodes   OrgChartNode[] @relation("OrgNodeChildren")
-  level        Int         @default(0)
-  order        Int         @default(0)
-  updatedAt    DateTime    @updatedAt
+  level        Int            @default(0)
+  order        Int            @default(0)
+  updatedAt    DateTime       @updatedAt
 
   @@unique([employeeId])
   @@map("org_chart_nodes")
@@ -647,24 +695,24 @@ model OrgChartNode {
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 model Document {
-  id          String       @id @default(uuid())
-  employeeId  String
-  employee    Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  type        DocumentType @default(OTHER)
-  name        String
-  description String?
-  fileUrl     String
-  fileKey     String?      // S3 key or local path
-  fileSize    Int?         // bytes
-  mimeType    String?
-  isVerified  Boolean      @default(false)
-  verifiedBy  String?
-  verifiedAt  DateTime?
-  expiresAt   DateTime?
-  isConfidential Boolean   @default(false)
-  uploadedAt  DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
+  id             String       @id @default(uuid())
+  employeeId     String
+  employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type           DocumentType @default(OTHER)
+  name           String
+  description    String?
+  fileUrl        String
+  fileKey        String? // S3 key or local path
+  fileSize       Int? // bytes
+  mimeType       String?
+  isVerified     Boolean      @default(false)
+  verifiedBy     String?
+  verifiedAt     DateTime?
+  expiresAt      DateTime?
+  isConfidential Boolean      @default(false)
+  uploadedAt     DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
 
   @@index([employeeId, type])
   @@index([expiresAt])
@@ -676,70 +724,70 @@ model Document {
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 model LeavePolicy {
-  id              String    @id @default(uuid())
-  name            String
-  leaveType       LeaveType
-  daysAllowed     Decimal   @db.Decimal(5, 1)
-  carryoverDays   Decimal   @default(0) @db.Decimal(5, 1)
-  accrualRate     Decimal?  @db.Decimal(5, 2)  // days per month
-  requiresApproval Boolean  @default(true)
-  minNoticeDays   Int       @default(0)
+  id                 String    @id @default(uuid())
+  name               String
+  leaveType          LeaveType
+  daysAllowed        Decimal   @db.Decimal(5, 1)
+  carryoverDays      Decimal   @default(0) @db.Decimal(5, 1)
+  accrualRate        Decimal?  @db.Decimal(5, 2) // days per month
+  requiresApproval   Boolean   @default(true)
+  minNoticeDays      Int       @default(0)
   maxConsecutiveDays Int?
-  eligibleAfterDays Int     @default(0)  // probation guard
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  eligibleAfterDays  Int       @default(0) // probation guard
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@unique([leaveType])
   @@map("leave_policies")
 }
 
 model LeaveBalance {
-  id          String    @id @default(uuid())
-  employeeId  String
-  employee    Employee  @relation(fields: [employeeId], references: [id])
-  leaveType   LeaveType
-  year        Int
-  allocated   Decimal   @default(0) @db.Decimal(5, 1)
-  used        Decimal   @default(0) @db.Decimal(5, 1)
-  pending     Decimal   @default(0) @db.Decimal(5, 1)
-  carryOver   Decimal   @default(0) @db.Decimal(5, 1)
-  updatedAt   DateTime  @updatedAt
+  id         String    @id @default(uuid())
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  leaveType  LeaveType
+  year       Int
+  allocated  Decimal   @default(0) @db.Decimal(5, 1)
+  used       Decimal   @default(0) @db.Decimal(5, 1)
+  pending    Decimal   @default(0) @db.Decimal(5, 1)
+  carryOver  Decimal   @default(0) @db.Decimal(5, 1)
+  updatedAt  DateTime  @updatedAt
 
   @@unique([employeeId, leaveType, year])
   @@map("leave_balances")
 }
 
 model LeaveRequest {
-  id              String      @id @default(uuid())
-  employeeId      String
-  employee        Employee    @relation(fields: [employeeId], references: [id])
-  leaveType       LeaveType
-  status          LeaveStatus @default(PENDING)
+  id         String      @id @default(uuid())
+  employeeId String
+  employee   Employee    @relation(fields: [employeeId], references: [id])
+  leaveType  LeaveType
+  status     LeaveStatus @default(PENDING)
 
-  startDate       DateTime    @db.Date
-  endDate         DateTime    @db.Date
-  daysRequested   Decimal     @db.Decimal(5, 1)
-  isHalfDay       Boolean     @default(false)
-  halfDayPeriod   String?     // "morning" | "afternoon"
+  startDate     DateTime @db.Date
+  endDate       DateTime @db.Date
+  daysRequested Decimal  @db.Decimal(5, 1)
+  isHalfDay     Boolean  @default(false)
+  halfDayPeriod String? // "morning" | "afternoon"
 
-  reason          String?
-  attachmentUrl   String?
+  reason        String?
+  attachmentUrl String?
 
   // Approval workflow
-  approverId      String?     // Employee.id
-  approverNotes   String?
-  approvedAt      DateTime?
-  rejectedAt      DateTime?
+  approverId    String? // Employee.id
+  approverNotes String?
+  approvedAt    DateTime?
+  rejectedAt    DateTime?
 
   // HR override
-  hrReviewerId    String?
-  hrNotes         String?
-  hrReviewedAt    DateTime?
+  hrReviewerId String?
+  hrNotes      String?
+  hrReviewedAt DateTime?
 
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  cancelledAt     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  cancelledAt DateTime?
 
   @@index([employeeId, status])
   @@index([startDate, endDate])
@@ -751,26 +799,28 @@ model LeaveRequest {
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 model Attendance {
-  id            String           @id @default(uuid())
-  employeeId    String
-  employee      Employee         @relation(fields: [employeeId], references: [id])
-  date          DateTime         @db.Date
-  status        AttendanceStatus @default(PRESENT)
+  id         String           @id @default(uuid())
+  employeeId String
+  employee   Employee         @relation(fields: [employeeId], references: [id])
+  date       DateTime         @db.Date
+  status     AttendanceStatus @default(PRESENT)
 
   checkIn       DateTime?
   checkOut      DateTime?
-  breakMinutes  Int              @default(0)
-  hoursWorked   Decimal?         @db.Decimal(5, 2)
-  overtimeHours Decimal          @default(0) @db.Decimal(5, 2)
+  breakMinutes  Int       @default(0)
+  hoursWorked   Decimal?  @db.Decimal(5, 2)
+  overtimeHours Decimal   @default(0) @db.Decimal(5, 2)
 
-  isRemote      Boolean          @default(false)
-  locationId    String?
+  isRemote   Boolean @default(false)
+  locationId String?
+  latitude   Float?
+  longitude  Float?
 
-  note          String?
-  approvedBy    String?
+  note       String?
+  approvedBy String?
 
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([employeeId, date])
   @@index([date])
@@ -794,87 +844,89 @@ model PublicHoliday {
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 model PayrollPeriod {
-  id          String           @id @default(uuid())
-  name        String           // "March 2025"
-  frequency   PayrollFrequency @default(MONTHLY)
-  startDate   DateTime         @db.Date
-  endDate     DateTime         @db.Date
-  payDate     DateTime         @db.Date
-  status      PayrollStatus    @default(DRAFT)
+  id           String           @id @default(uuid())
+  name         String // "March 2025"
+  frequency    PayrollFrequency @default(MONTHLY)
+  startDate    DateTime         @db.Date
+  endDate      DateTime         @db.Date
+  payDate      DateTime         @db.Date
+  status       PayrollStatus    @default(DRAFT)
   departmentId String?
-  department  Department?      @relation(fields: [departmentId], references: [id])
+  department   Department?      @relation(fields: [departmentId], references: [id])
 
   processedBy String?
   processedAt DateTime?
   approvedBy  String?
   approvedAt  DateTime?
 
-  notes       String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  items       PayrollItem[]
+  items PayrollItem[]
 
   @@map("payroll_periods")
 }
 
 // Alias for backward compat
 model Payroll {
-  id           String     @id @default(uuid())
-  departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id])
-  periodStart  DateTime   @db.Date
-  periodEnd    DateTime   @db.Date
-  payDate      DateTime?  @db.Date
-  status       PayrollStatus @default(DRAFT)
-  totalGross   Decimal    @default(0) @db.Decimal(14, 2)
-  totalNet     Decimal    @default(0) @db.Decimal(14, 2)
-  totalDeductions Decimal @default(0) @db.Decimal(14, 2)
-  totalBonuses Decimal    @default(0) @db.Decimal(14, 2)
-  currency     String     @default("USD")
-  processedBy  String?
-  processedAt  DateTime?
-  approvedBy   String?
-  approvedAt   DateTime?
-  notes        String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id              String        @id @default(uuid())
+  departmentId    String?
+  department      Department?   @relation(fields: [departmentId], references: [id])
+  periodStart     DateTime      @db.Date
+  periodEnd       DateTime      @db.Date
+  payDate         DateTime?     @db.Date
+  status          PayrollStatus @default(DRAFT)
+  totalGross      Decimal       @default(0) @db.Decimal(14, 2)
+  totalNet        Decimal       @default(0) @db.Decimal(14, 2)
+  totalDeductions Decimal       @default(0) @db.Decimal(14, 2)
+  totalBonuses    Decimal       @default(0) @db.Decimal(14, 2)
+  currency        String        @default("USD")
+  processedBy     String?
+  processedAt     DateTime?
+  approvedBy      String?
+  approvedAt      DateTime?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  items        PayrollItem[]
+  items PayrollItem[]
 
   @@map("payrolls")
 }
 
 model PayrollItem {
-  id              String    @id @default(uuid())
-  payrollId       String
-  payroll         Payroll   @relation(fields: [payrollId], references: [id])
-  employeeId      String
-  employee        Employee  @relation(fields: [employeeId], references: [id])
+  id         String   @id @default(uuid())
+  payrollId  String
+  payroll    Payroll  @relation(fields: [payrollId], references: [id])
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
 
   // Earnings
-  baseSalary      Decimal   @db.Decimal(14, 2)
-  regularHours    Decimal   @default(0) @db.Decimal(6, 2)
-  overtimeHours   Decimal   @default(0) @db.Decimal(6, 2)
-  overtimeRate    Decimal   @default(1.5) @db.Decimal(4, 2)
-  overtimePay     Decimal   @default(0) @db.Decimal(14, 2)
-  grossPay        Decimal   @db.Decimal(14, 2)
-  netPay          Decimal   @db.Decimal(14, 2)
-  currency        String    @default("USD")
+  baseSalary    Decimal @db.Decimal(14, 2)
+  regularHours  Decimal @default(0) @db.Decimal(6, 2)
+  overtimeHours Decimal @default(0) @db.Decimal(6, 2)
+  overtimeRate  Decimal @default(1.5) @db.Decimal(4, 2)
+  overtimePay   Decimal @default(0) @db.Decimal(14, 2)
+  grossPay      Decimal @db.Decimal(14, 2)
+  netPay        Decimal @db.Decimal(14, 2)
+  currency      String  @default("USD")
 
   // Working days
-  workingDays     Int       @default(0)
-  attendedDays    Int       @default(0)
-  leaveDays       Decimal   @default(0) @db.Decimal(5, 1)
-  absenceDays     Decimal   @default(0) @db.Decimal(5, 1)
+  workingDays  Int     @default(0)
+  attendedDays Int     @default(0)
+  leaveDays    Decimal @default(0) @db.Decimal(5, 1)
+  absenceDays  Decimal @default(0) @db.Decimal(5, 1)
 
   // Relations
-  deductions      PayrollDeduction[]
-  bonuses         PayrollBonus[]
+  deductions PayrollDeduction[]
+  bonuses    PayrollBonus[]
 
   notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  payrollPeriod   PayrollPeriod? @relation(fields: [payrollPeriodId], references: [id])
+  payrollPeriodId String?
 
   @@unique([payrollId, employeeId])
   @@map("payroll_items")
@@ -887,7 +939,7 @@ model PayrollDeduction {
   type          DeductionType
   name          String
   amount        Decimal       @db.Decimal(14, 2)
-  percentage    Decimal?      @db.Decimal(5, 4)  // if percentage-based
+  percentage    Decimal?      @db.Decimal(5, 4) // if percentage-based
   isPreTax      Boolean       @default(false)
   notes         String?
 
@@ -912,43 +964,43 @@ model PayrollBonus {
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 model JobPosting {
-  id               String    @id @default(uuid())
-  title            String
-  code             String?   @unique
-  departmentId     String?
-  positionId       String?
-  status           JobStatus @default(DRAFT)
+  id           String    @id @default(uuid())
+  title        String
+  code         String?   @unique
+  departmentId String?
+  positionId   String?
+  status       JobStatus @default(DRAFT)
 
   description      String
   requirements     String?
   responsibilities String?
   benefits         String?
-  skills           String[]  // array of required skills
+  skills           String[] // array of required skills
 
-  employmentType   EmploymentType @default(FULL_TIME)
-  experienceYears  Int?
-  educationLevel   String?
-  salaryMin        Decimal?  @db.Decimal(14, 2)
-  salaryMax        Decimal?  @db.Decimal(14, 2)
-  currency         String    @default("USD")
-  showSalary       Boolean   @default(false)
+  employmentType  EmploymentType @default(FULL_TIME)
+  experienceYears Int?
+  educationLevel  String?
+  salaryMin       Decimal?       @db.Decimal(14, 2)
+  salaryMax       Decimal?       @db.Decimal(14, 2)
+  currency        String         @default("USD")
+  showSalary      Boolean        @default(false)
 
-  location         String?
-  isRemote         Boolean   @default(false)
-  openingsCount    Int       @default(1)
-  filledCount      Int       @default(0)
-  closingDate      DateTime?
+  location      String?
+  isRemote      Boolean   @default(false)
+  openingsCount Int       @default(1)
+  filledCount   Int       @default(0)
+  closingDate   DateTime?
 
-  hiringManagerId  String?   // Employee.id
-  createdById      String?   // User.id
+  hiringManagerId String? // Employee.id
+  createdById     String? // User.id
 
-  publishedAt      DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  deletedAt        DateTime? // soft delete
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // soft delete
 
-  applications     JobApplication[]
-  pipelineStages   PipelineStage[]
+  applications   JobApplication[]
+  pipelineStages PipelineStage[]
 
   @@index([status])
   @@index([deletedAt])
@@ -956,14 +1008,14 @@ model JobPosting {
 }
 
 model PipelineStage {
-  id          String     @id @default(uuid())
-  jobId       String
-  job         JobPosting @relation(fields: [jobId], references: [id])
-  name        String     // "Screening", "Technical Interview", etc.
-  order       Int        @default(0)
-  isDefault   Boolean    @default(false)
-  color       String?
-  createdAt   DateTime   @default(now())
+  id        String     @id @default(uuid())
+  jobId     String
+  job       JobPosting @relation(fields: [jobId], references: [id])
+  name      String // "Screening", "Technical Interview", etc.
+  order     Int        @default(0)
+  isDefault Boolean    @default(false)
+  color     String?
+  createdAt DateTime   @default(now())
 
   applications JobApplication[]
 
@@ -972,7 +1024,7 @@ model PipelineStage {
 }
 
 model Candidate {
-  id              String          @id @default(uuid())
+  id              String  @id @default(uuid())
   firstName       String
   lastName        String
   email           String
@@ -981,27 +1033,27 @@ model Candidate {
   currentCompany  String?
   experienceYears Int?
 
-  resumeUrl       String?
-  coverLetterUrl  String?
-  portfolioUrl    String?
-  linkedinUrl     String?
-  githubUrl       String?
+  resumeUrl      String?
+  coverLetterUrl String?
+  portfolioUrl   String?
+  linkedinUrl    String?
+  githubUrl      String?
 
-  source          CandidateSource @default(OTHER)
-  skills          String[]
-  tags            String[]
-  notes           String?
-  rating          Int?            // 1-5 HR rating
+  source CandidateSource @default(OTHER)
+  skills String[]
+  tags   String[]
+  notes  String?
+  rating Int? // 1-5 HR rating
 
-  referredBy      String?         // Employee.id
-  isBlacklisted   Boolean         @default(false)
+  referredBy      String? // Employee.id
+  isBlacklisted   Boolean @default(false)
   blacklistReason String?
 
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  deletedAt       DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  applications    JobApplication[]
+  applications JobApplication[]
 
   @@index([email])
   @@index([deletedAt])
@@ -1009,34 +1061,34 @@ model Candidate {
 }
 
 model JobApplication {
-  id                String            @id @default(uuid())
-  jobId             String
-  job               JobPosting        @relation(fields: [jobId], references: [id])
-  candidateId       String
-  candidate         Candidate         @relation(fields: [candidateId], references: [id])
-  status            ApplicationStatus @default(APPLIED)
-  currentStageId    String?
-  currentStage      PipelineStage?    @relation(fields: [currentStageId], references: [id])
+  id             String            @id @default(uuid())
+  jobId          String
+  job            JobPosting        @relation(fields: [jobId], references: [id])
+  candidateId    String
+  candidate      Candidate         @relation(fields: [candidateId], references: [id])
+  status         ApplicationStatus @default(APPLIED)
+  currentStageId String?
+  currentStage   PipelineStage?    @relation(fields: [currentStageId], references: [id])
 
-  recruiterId       String?
-  recruiter         Employee?         @relation("RecruiterApplications", fields: [recruiterId], references: [id])
+  recruiterId String?
+  recruiter   Employee? @relation("RecruiterApplications", fields: [recruiterId], references: [id])
 
   coverLetter       String?
-  salaryExpectation Decimal?          @db.Decimal(14, 2)
-  expectedStartDate DateTime?         @db.Date
+  salaryExpectation Decimal?  @db.Decimal(14, 2)
+  expectedStartDate DateTime? @db.Date
   notes             String?
-  internalNotes     String?           // HR only
+  internalNotes     String? // HR only
 
-  rejectionReason   String?
-  offerAmount       Decimal?          @db.Decimal(14, 2)
-  offerExtendedAt   DateTime?
-  offerAcceptedAt   DateTime?
-  offerDeclinedAt   DateTime?
+  rejectionReason String?
+  offerAmount     Decimal?  @db.Decimal(14, 2)
+  offerExtendedAt DateTime?
+  offerAcceptedAt DateTime?
+  offerDeclinedAt DateTime?
 
-  appliedAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  appliedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  interviews        Interview[]
+  interviews Interview[]
 
   @@unique([jobId, candidateId])
   @@index([status])
@@ -1047,16 +1099,16 @@ model Interview {
   id             String         @id @default(uuid())
   applicationId  String
   application    JobApplication @relation(fields: [applicationId], references: [id])
-  title          String         // "Technical Round 1"
+  title          String // "Technical Round 1"
   scheduledAt    DateTime
   durationMins   Int            @default(60)
-  location       String?        // or video link
-  interviewerIds String[]       // Employee ids
-  type           String         // phone, video, onsite, panel
+  location       String? // or video link
+  interviewerIds String[] // Employee ids
+  type           String // phone, video, onsite, panel
   notes          String?
   feedback       String?
-  rating         Int?           // 1-5
-  outcome        String?        // passed, failed, rescheduled
+  rating         Int? // 1-5
+  outcome        String? // passed, failed, rescheduled
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
@@ -1069,119 +1121,121 @@ model Interview {
 
 // ── Task Templates (reusable blueprints) ──────────────────────────────────
 model OnboardingTemplate {
-  id          String        @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
-  isDefault   Boolean       @default(false)
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   tasks       OnboardingTemplateTask[]
   onboardings Onboarding[]
 }
 
 model OnboardingTemplateTask {
-  id           String              @id @default(uuid())
-  templateId   String
-  template     OnboardingTemplate  @relation(fields: [templateId], references: [id])
-  title        String
-  description  String?
-  category     TaskCategory        @default(OTHER)
-  order        Int                 @default(0)
-  dueDays      Int                 @default(7)   // days after hire date
-  assignToRole Role?               // who is responsible
-  isRequired   Boolean             @default(true)
-  checklistItems String[]          // sub-items
+  id             String             @id @default(uuid())
+  templateId     String
+  template       OnboardingTemplate @relation(fields: [templateId], references: [id])
+  title          String
+  description    String?
+  category       TaskCategory       @default(OTHER)
+  order          Int                @default(0)
+  dueDays        Int                @default(7) // days after hire date
+  assignToRole   Role?              @relation(fields: [roleId], references: [id]) // who is responsible
+  isRequired     Boolean            @default(true)
+  checklistItems String[] // sub-items
+  roleId         String?
 }
 
 model OffboardingTemplate {
-  id          String        @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
-  isDefault   Boolean       @default(false)
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  tasks       OffboardingTemplateTask[]
+  tasks        OffboardingTemplateTask[]
   offboardings Offboarding[]
 }
 
 model OffboardingTemplateTask {
-  id           String               @id @default(uuid())
-  templateId   String
-  template     OffboardingTemplate  @relation(fields: [templateId], references: [id])
-  title        String
-  description  String?
-  category     TaskCategory         @default(OTHER)
-  order        Int                  @default(0)
-  dueDays      Int                  @default(-3)  // days before last day (negative = before)
-  assignToRole Role?
-  isRequired   Boolean              @default(true)
+  id             String              @id @default(uuid())
+  templateId     String
+  template       OffboardingTemplate @relation(fields: [templateId], references: [id])
+  title          String
+  description    String?
+  category       TaskCategory        @default(OTHER)
+  order          Int                 @default(0)
+  dueDays        Int                 @default(-3) // days before last day (negative = before)
+  assignToRole   Role?               @relation(fields: [roleId], references: [id])
+  isRequired     Boolean             @default(true)
   checklistItems String[]
+  roleId         String?
 }
 
 // ── Instance: one per employee ─────────────────────────────────────────────
 model Onboarding {
-  id           String             @id @default(uuid())
-  employeeId   String             @unique
-  employee     Employee           @relation(fields: [employeeId], references: [id])
-  templateId   String?
-  template     OnboardingTemplate? @relation(fields: [templateId], references: [id])
-  status       BoardingStatus     @default(NOT_STARTED)
-  startDate    DateTime?          @db.Date
-  targetDate   DateTime?          @db.Date
-  completedAt  DateTime?
-  hrOwnerId    String?            // HR person responsible
-  notes        String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  id          String              @id @default(uuid())
+  employeeId  String              @unique
+  employee    Employee            @relation(fields: [employeeId], references: [id])
+  templateId  String?
+  template    OnboardingTemplate? @relation(fields: [templateId], references: [id])
+  status      BoardingStatus      @default(NOT_STARTED)
+  startDate   DateTime?           @db.Date
+  targetDate  DateTime?           @db.Date
+  completedAt DateTime?
+  hrOwnerId   String? // HR person responsible
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 
-  tasks        OnboardingTask[]
+  tasks OnboardingTask[]
 
   @@map("onboardings")
 }
 
 model OnboardingTask {
-  id            String      @id @default(uuid())
-  onboardingId  String
-  onboarding    Onboarding  @relation(fields: [onboardingId], references: [id])
-  title         String
-  description   String?
-  category      TaskCategory @default(OTHER)
-  status        TaskStatus  @default(PENDING)
-  order         Int         @default(0)
-  dueDate       DateTime?   @db.Date
-  assignedToId  String?     // User.id
-  completedAt   DateTime?
-  completedById String?
-  notes         String?
-  checklistItems Json       @default("[]")  // [{ label, done }]
-  isRequired    Boolean     @default(true)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id             String       @id @default(uuid())
+  onboardingId   String
+  onboarding     Onboarding   @relation(fields: [onboardingId], references: [id])
+  title          String
+  description    String?
+  category       TaskCategory @default(OTHER)
+  status         TaskStatus   @default(PENDING)
+  order          Int          @default(0)
+  dueDate        DateTime?    @db.Date
+  assignedToId   String? // User.id
+  completedAt    DateTime?
+  completedById  String?
+  notes          String?
+  checklistItems Json         @default("[]") // [{ label, done }]
+  isRequired     Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@map("onboarding_tasks")
 }
 
 model Offboarding {
-  id           String              @id @default(uuid())
-  employeeId   String              @unique
-  employee     Employee            @relation(fields: [employeeId], references: [id])
-  templateId   String?
-  template     OffboardingTemplate? @relation(fields: [templateId], references: [id])
-  status       BoardingStatus      @default(NOT_STARTED)
-  lastWorkDay  DateTime?           @db.Date
-  completedAt  DateTime?
+  id              String               @id @default(uuid())
+  employeeId      String               @unique
+  employee        Employee             @relation(fields: [employeeId], references: [id])
+  templateId      String?
+  template        OffboardingTemplate? @relation(fields: [templateId], references: [id])
+  status          BoardingStatus       @default(NOT_STARTED)
+  lastWorkDay     DateTime?            @db.Date
+  completedAt     DateTime?
   exitInterviewAt DateTime?
-  exitReason   String?
-  hrOwnerId    String?
-  notes        String?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  exitReason      String?
+  hrOwnerId       String?
+  notes           String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
-  tasks        OffboardingTask[]
+  tasks OffboardingTask[]
 
   @@map("offboardings")
 }
@@ -1213,37 +1267,37 @@ model OffboardingTask {
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 model ReviewCycle {
-  id          String    @id @default(uuid())
-  name        String    // "Q1 2025", "Annual 2025"
-  startDate   DateTime  @db.Date
-  endDate     DateTime  @db.Date
-  dueDate     DateTime  @db.Date
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String   @id @default(uuid())
+  name      String // "Q1 2025", "Annual 2025"
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  dueDate   DateTime @db.Date
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  reviews     PerformanceReview[]
+  reviews PerformanceReview[]
 
   @@map("review_cycles")
 }
 
 model PerformanceReview {
-  id              String            @id @default(uuid())
-  cycleId         String?
-  cycle           ReviewCycle?      @relation(fields: [cycleId], references: [id])
+  id      String       @id @default(uuid())
+  cycleId String?
+  cycle   ReviewCycle? @relation(fields: [cycleId], references: [id])
 
-  employeeId      String
-  employee        Employee          @relation("RevieweeReviews", fields: [employeeId], references: [id])
-  reviewerId      String
-  reviewer        Employee          @relation("ReviewerReviews", fields: [reviewerId], references: [id])
+  employeeId String
+  employee   Employee @relation("RevieweeReviews", fields: [employeeId], references: [id])
+  reviewerId String
+  reviewer   Employee @relation("ReviewerReviews", fields: [reviewerId], references: [id])
 
-  status          ReviewStatus      @default(DRAFT)
-  overallRating   PerformanceRating?
-  overallScore    Decimal?          @db.Decimal(4, 2)  // 0.00–5.00
+  status        ReviewStatus       @default(DRAFT)
+  overallRating PerformanceRating?
+  overallScore  Decimal?           @db.Decimal(4, 2) // 0.00–5.00
 
   // Self review
-  selfRating      PerformanceRating?
-  selfComments    String?
+  selfRating   PerformanceRating?
+  selfComments String?
 
   // Manager review
   managerStrengths    String?
@@ -1251,82 +1305,82 @@ model PerformanceReview {
   managerComments     String?
 
   // HR review
-  hrComments          String?
-  hrApprovedAt        DateTime?
+  hrComments   String?
+  hrApprovedAt DateTime?
 
   // Employee acknowledgement
-  isAcknowledged      Boolean    @default(false)
-  acknowledgedAt      DateTime?
-  employeeComments    String?
+  isAcknowledged   Boolean   @default(false)
+  acknowledgedAt   DateTime?
+  employeeComments String?
 
   isSharedWithEmployee Boolean   @default(false)
   sharedAt             DateTime?
 
-  period          String?    // backup if no cycle: "Q3 2025"
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  period    String? // backup if no cycle: "Q3 2025"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  criteria        ReviewCriterion[]
-  feedback360     Feedback360[]
-  goals           Goal[]
+  criteria    ReviewCriterion[]
+  feedback360 Feedback360[]
+  goals       Goal[]
 
   @@map("performance_reviews")
 }
 
 model ReviewCriterion {
-  id          String            @id @default(uuid())
-  reviewId    String
-  review      PerformanceReview @relation(fields: [reviewId], references: [id])
-  name        String            // "Communication", "Technical Skills"
-  description String?
-  weight      Int               @default(1)   // relative weight
-  selfRating  PerformanceRating?
-  selfComment String?
-  managerRating PerformanceRating?
+  id             String             @id @default(uuid())
+  reviewId       String
+  review         PerformanceReview  @relation(fields: [reviewId], references: [id])
+  name           String // "Communication", "Technical Skills"
+  description    String?
+  weight         Int                @default(1) // relative weight
+  selfRating     PerformanceRating?
+  selfComment    String?
+  managerRating  PerformanceRating?
   managerComment String?
-  score       Decimal?          @db.Decimal(4, 2)
+  score          Decimal?           @db.Decimal(4, 2)
 
   @@map("review_criteria")
 }
 
 model Feedback360 {
-  id          String            @id @default(uuid())
-  reviewId    String
-  review      PerformanceReview @relation(fields: [reviewId], references: [id])
-  giverId     String
-  giver       Employee          @relation("FeedbackGiver", fields: [giverId], references: [id])
-  receiverId  String
-  receiver    Employee          @relation("FeedbackReceiver", fields: [receiverId], references: [id])
-  relationship String           // "peer", "subordinate", "manager", "cross-team"
-  rating      PerformanceRating?
-  strengths   String?
+  id           String             @id @default(uuid())
+  reviewId     String
+  review       PerformanceReview  @relation(fields: [reviewId], references: [id])
+  giverId      String
+  giver        Employee           @relation("FeedbackGiver", fields: [giverId], references: [id])
+  receiverId   String
+  receiver     Employee           @relation("FeedbackReceiver", fields: [receiverId], references: [id])
+  relationship String // "peer", "subordinate", "manager", "cross-team"
+  rating       PerformanceRating?
+  strengths    String?
   improvements String?
-  comments    String?
-  isAnonymous Boolean           @default(true)
-  submittedAt DateTime?
-  createdAt   DateTime          @default(now())
+  comments     String?
+  isAnonymous  Boolean            @default(true)
+  submittedAt  DateTime?
+  createdAt    DateTime           @default(now())
 
   @@map("feedback_360")
 }
 
 model Goal {
-  id           String            @id @default(uuid())
-  employeeId   String
-  employee     Employee          @relation(fields: [employeeId], references: [id])
-  reviewId     String?
-  review       PerformanceReview? @relation(fields: [reviewId], references: [id])
-  title        String
-  description  String?
-  status       GoalStatus        @default(NOT_STARTED)
-  priority     GoalPriority      @default(MEDIUM)
-  progress     Int               @default(0)   // 0-100
-  startDate    DateTime?         @db.Date
-  dueDate      DateTime?         @db.Date
-  completedAt  DateTime?
-  kpi          String?           // measurable success criteria
-  notes        String?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  id          String             @id @default(uuid())
+  employeeId  String
+  employee    Employee           @relation(fields: [employeeId], references: [id])
+  reviewId    String?
+  review      PerformanceReview? @relation(fields: [reviewId], references: [id])
+  title       String
+  description String?
+  status      GoalStatus         @default(NOT_STARTED)
+  priority    GoalPriority       @default(MEDIUM)
+  progress    Int                @default(0) // 0-100
+  startDate   DateTime?          @db.Date
+  dueDate     DateTime?          @db.Date
+  completedAt DateTime?
+  kpi         String? // measurable success criteria
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 
   @@map("goals")
 }
@@ -1344,24 +1398,24 @@ model BenefitPlan {
   policyNumber String?
 
   // Cost
-  employerCost Decimal?        @db.Decimal(12, 2)
-  employeeCost Decimal?        @db.Decimal(12, 2)
-  currency     String          @default("USD")
+  employerCost Decimal? @db.Decimal(12, 2)
+  employeeCost Decimal? @db.Decimal(12, 2)
+  currency     String   @default("USD")
 
   // Eligibility
-  minTenureDays Int            @default(0)
+  minTenureDays Int              @default(0)
   eligibleTypes EmploymentType[] // FULL_TIME only, etc.
 
   enrollmentDeadline DateTime?
-  effectiveDate      DateTime?  @db.Date
-  expirationDate     DateTime?  @db.Date
+  effectiveDate      DateTime? @db.Date
+  expirationDate     DateTime? @db.Date
 
-  details      Json?           // specific plan JSON details
-  isActive     Boolean         @default(true)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  details   Json? // specific plan JSON details
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  enrollments  EmployeeBenefit[]
+  enrollments EmployeeBenefit[]
 
   @@map("benefit_plans")
 }
@@ -1377,7 +1431,7 @@ model EmployeeBenefit {
   effectiveAt DateTime?        @db.Date
   expiresAt   DateTime?        @db.Date
   waiveReason String?
-  dependents  Json?            // [{name, dob, relation}]
+  dependents  Json? // [{name, dob, relation}]
   notes       String?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -1399,15 +1453,15 @@ model Notification {
   status      NotificationStatus  @default(PENDING)
   title       String
   message     String
-  data        Json?               // extra payload
-  link        String?             // deep link URL
+  data        Json? // extra payload
+  link        String? // deep link URL
   isRead      Boolean             @default(false)
   readAt      DateTime?
   sentAt      DateTime?
   failedAt    DateTime?
   failReason  String?
   retryCount  Int                 @default(0)
-  scheduledAt DateTime?           // for deferred notifications
+  scheduledAt DateTime? // for deferred notifications
   createdAt   DateTime            @default(now())
 
   @@index([userId, isRead])
@@ -1416,15 +1470,15 @@ model Notification {
 }
 
 model EmailTemplate {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  subject     String
-  htmlBody    String
-  textBody    String?
-  variables   String[] // list of template vars like {{firstName}}
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  name      String   @unique
+  subject   String
+  htmlBody  String
+  textBody  String?
+  variables String[] // list of template vars like {{firstName}}
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("email_templates")
 }
@@ -1438,14 +1492,14 @@ model AuditLog {
   userId       String?
   user         User?       @relation(fields: [userId], references: [id])
   action       AuditAction
-  resource     String      // table/model name
+  resource     String // table/model name
   resourceId   String?
   description  String?
   oldValues    Json?
   newValues    Json?
   ipAddress    String?
   userAgent    String?
-  duration     Int?        // ms
+  duration     Int? // ms
   isSuccess    Boolean     @default(true)
   errorMessage String?
   createdAt    DateTime    @default(now())
@@ -1461,19 +1515,19 @@ model AuditLog {
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
 model WebhookConfig {
-  id          String          @id @default(uuid())
+  id          String         @id @default(uuid())
   name        String
   url         String
-  secret      String          // HMAC signing secret
+  secret      String // HMAC signing secret
   events      WebhookEvent[]
-  headers     Json?           // custom headers
-  status      WebhookStatus   @default(ACTIVE)
+  headers     Json? // custom headers
+  status      WebhookStatus  @default(ACTIVE)
   createdById String?
-  createdBy   User?           @relation(fields: [createdById], references: [id])
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdBy   User?          @relation(fields: [createdById], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
-  deliveries  WebhookDelivery[]
+  deliveries WebhookDelivery[]
 
   @@map("webhook_configs")
 }
@@ -1489,7 +1543,7 @@ model WebhookDelivery {
   attempt      Int           @default(1)
   isSuccess    Boolean       @default(false)
   errorMessage String?
-  duration     Int?          // ms
+  duration     Int? // ms
   sentAt       DateTime      @default(now())
   nextRetryAt  DateTime?
 

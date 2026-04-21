@@ -1,4 +1,4 @@
-﻿import { prisma } from '../../config/prisma';
+import { prisma } from '../../config/prisma';
 import { parsePagination, paginate } from '../../common/utils/response';
 import { NotFound } from '../../common/utils/apiError';
 import type { BenefitsQuery } from './Benefits.types';
@@ -35,4 +35,5 @@ export class BenefitsService {
   }
 }
 
-export const BenefitsService = new BenefitsService();
+export const benefitsService = new BenefitsService();
+

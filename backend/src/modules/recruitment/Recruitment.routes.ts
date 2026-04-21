@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { Role } from '@prisma/client';
 import { RecruitmentController } from './Recruitment.controller';
 import { authJWT } from '../../middlewares/authJWT';
@@ -6,18 +6,26 @@ import { rbac } from '../../middlewares/rbac';
 import { validate } from '../../middlewares/validate';
 import { RecruitmentQuerySchema } from './Recruitment.types';
 
-export const RecruitmentRouter = Router();
+export const recruitmentRouter = Router();
 
-RecruitmentRouter.use(authJWT);
 
-RecruitmentRouter.get(
+
+recruitmentRouter.use(authJWT);
+
+const ADMIN_ROLES = ['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER'];
+const ALL_ROLES = [...ADMIN_ROLES, 'DEPARTMENT_MANAGER'];
+
+recruitmentRouter.get(
   '/',
-  rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER, Role.DEPARTMENT_MANAGER),
+  rbac(ALL_ROLES),
   validate(RecruitmentQuerySchema, 'query'),
   RecruitmentController.list,
 );
 
-RecruitmentRouter.get('/:id',  RecruitmentController.show);
-RecruitmentRouter.post('/',    rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER), RecruitmentController.create);
-RecruitmentRouter.patch('/:id',rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER), RecruitmentController.update);
-RecruitmentRouter.delete('/:id',rbac(Role.SUPER_ADMIN, Role.HR_ADMIN), RecruitmentController.remove);
+recruitmentRouter.get('/:id',  RecruitmentController.show);
+recruitmentRouter.post('/',    rbac(ADMIN_ROLES), RecruitmentController.create);
+recruitmentRouter.patch('/:id', rbac(ADMIN_ROLES), RecruitmentController.update);
+recruitmentRouter.delete('/:id', rbac(['SUPER_ADMIN', 'HR_ADMIN']), RecruitmentController.remove);
+
+
+

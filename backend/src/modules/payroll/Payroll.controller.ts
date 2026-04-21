@@ -1,31 +1,44 @@
-﻿import { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { asyncHandler } from '../../common/utils/asyncHandler';
-import { sendOk, sendCreated, sendNoContent } from '../../common/utils/response';
-import { PayrollService } from './Payroll.service';
+import { sendOk, sendCreated } from '../../common/utils/response';
+import { payrollService } from './Payroll.service';
+import { payrollReportService } from './PayrollReport.service';
 
 export class PayrollController {
+  
+  static generate = asyncHandler(async (req: Request, res: Response) => {
+    const result = await payrollService.generatePeriod(req.body);
+    sendCreated(res, result, 'Payroll run generated successfully');
+  });
+
   static list = asyncHandler(async (req: Request, res: Response) => {
-    const result = await PayrollService.findAll(req.query as never);
-    res.json({ success: true, ...result });
+    const result = await payrollService.findAll(req.query as any);
+    sendOk(res, result);
   });
 
   static show = asyncHandler(async (req: Request, res: Response) => {
-    const item = await PayrollService.findById(req.params.id);
-    sendOk(res, item);
+    const details = await payrollService.getDetails(req.params.id);
+    sendOk(res, details);
   });
 
-  static create = asyncHandler(async (req: Request, res: Response) => {
-    const item = await PayrollService.create(req.body);
-    sendCreated(res, item);
+  static approve = asyncHandler(async (req: Request, res: Response) => {
+    const updated = await payrollService.approve(req.params.id);
+    sendOk(res, updated, 'Payroll approved successfully');
   });
 
-  static update = asyncHandler(async (req: Request, res: Response) => {
-    const item = await PayrollService.update(req.params.id, req.body);
-    sendOk(res, item);
+  static downloadPDF = asyncHandler(async (req: Request, res: Response) => {
+    await payrollReportService.generatePayslipPDF(req.params.itemId, res);
   });
 
-  static remove = asyncHandler(async (req: Request, res: Response) => {
-    await PayrollService.remove(req.params.id);
-    sendNoContent(res);
+  static exportExcel = asyncHandler(async (req: Request, res: Response) => {
+    await payrollReportService.exportToExcel(req.params.id, res);
+  });
+
+  static getSummary = asyncHandler(async (req: Request, res: Response) => {
+    const summary = await payrollService.getAccountingSummary(req.params.id);
+    sendOk(res, summary);
   });
 }
+
+
+

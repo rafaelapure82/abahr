@@ -1,23 +1,65 @@
-﻿import { Router } from 'express';
-import { Role } from '@prisma/client';
-import { OnboardingController } from './Onboarding.controller';
+import { Router } from 'express';
+import { onboardingController } from './Onboarding.controller';
 import { authJWT } from '../../middlewares/authJWT';
 import { rbac } from '../../middlewares/rbac';
 import { validate } from '../../middlewares/validate';
-import { OnboardingQuerySchema } from './Onboarding.types';
+import { asyncHandler } from '../../common/utils/asyncHandler';
+import { 
+  AssignOnboardingDtoSchema, OnboardingQuerySchema, 
+  CreateOnboardingTemplateDtoSchema, UpdateOnboardingTaskDtoSchema 
+} from './Onboarding.types';
 
-export const OnboardingRouter = Router();
+const router = Router();
 
-OnboardingRouter.use(authJWT);
+// All routes require authentication
+router.use(authJWT);
 
-OnboardingRouter.get(
-  '/',
-  rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER, Role.DEPARTMENT_MANAGER),
-  validate(OnboardingQuerySchema, 'query'),
-  OnboardingController.list,
+// ─── Templates ────────────────────────────────────────────────────────────
+router.get(
+  '/templates',
+  rbac(['READ:ONBOARDING', 'MANAGE:ALL']),
+  asyncHandler(onboardingController.listTemplates)
 );
 
-OnboardingRouter.get('/:id',  OnboardingController.show);
-OnboardingRouter.post('/',    rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER), OnboardingController.create);
-OnboardingRouter.patch('/:id',rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER), OnboardingController.update);
-OnboardingRouter.delete('/:id',rbac(Role.SUPER_ADMIN, Role.HR_ADMIN), OnboardingController.remove);
+router.get(
+  '/templates/:id',
+  rbac(['READ:ONBOARDING', 'MANAGE:ALL']),
+  asyncHandler(onboardingController.getTemplate)
+);
+
+router.post(
+  '/templates',
+  rbac(['CREATE:ONBOARDING', 'MANAGE:ALL']),
+  validate(CreateOnboardingTemplateDtoSchema),
+  asyncHandler(onboardingController.createTemplate)
+);
+
+// ─── Onboarding Instances ──────────────────────────────────────────────────
+router.get(
+  '/',
+  rbac(['READ:ONBOARDING', 'MANAGE:ALL']),
+  validate(OnboardingQuerySchema, 'query'),
+  asyncHandler(onboardingController.list)
+);
+
+router.get(
+  '/:id',
+  rbac(['READ:ONBOARDING', 'MANAGE:ALL']),
+  asyncHandler(onboardingController.getById)
+);
+
+router.post(
+  '/initiate',
+  rbac(['CREATE:ONBOARDING', 'MANAGE:ALL']),
+  validate(AssignOnboardingDtoSchema),
+  asyncHandler(onboardingController.initiate)
+);
+
+router.patch(
+  '/tasks/:taskId',
+  rbac(['UPDATE:ONBOARDING', 'MANAGE:ALL']),
+  validate(UpdateOnboardingTaskDtoSchema),
+  asyncHandler(onboardingController.updateTask)
+);
+
+export const onboardingRouter = router;

@@ -6,7 +6,6 @@
 
 import {
   PrismaClient,
-  Role,
   Gender,
   EmploymentType,
   EmploymentStatus,
@@ -28,7 +27,7 @@ const nextCode = () => `EMP-${String(empCounter++).padStart(4, '0')}`;
 async function createUser(
   email: string,
   password: string,
-  role: Role,
+  roleName: string,
   emp: {
     firstName: string;
     lastName: string;
@@ -42,15 +41,23 @@ async function createUser(
     hireDate?: Date;
   },
 ) {
+  // Find the role
+  const role = await prisma.role.findUnique({ where: { name: roleName } });
+  if (!role) throw new Error(`Role ${roleName} not found in database. Create roles first.`);
+
   const user = await prisma.user.upsert({
     where: { email },
     update: {},
     create: {
       email,
       passwordHash: await hash(password),
-      role,
       isActive: true,
       isEmailVerified: true,
+      roles: {
+        create: {
+          roleId: role.id,
+        },
+      },
     },
   });
 
@@ -84,6 +91,64 @@ async function createUser(
 
 async function main() {
   console.log('\n🌱 Starting ABA Talent Management seed...\n');
+
+  // ═══════════════════════════════════════
+  // 0. ROLES & PERMISSIONS (RBAC Dinámico)
+  // ═══════════════════════════════════════
+  console.log('🔐 Setting up Roles and Permissions...');
+
+  const resources = ['USER', 'EMPLOYEE', 'ROLE', 'PERMISSION', 'DEPARTMENT', 'LEAVE', 'PAYROLL', 'DOCUMENT', 'RECRUITMENT', 'ONBOARDING', 'PERFORMANCE', 'BENEFIT', 'AUDIT', 'SYSTEM'];
+  const actions = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'MANAGE', 'APPROVE', 'REJECT', 'EXPORT'];
+
+  const allPermissions: { action: string, resource: string }[] = [];
+  
+  // Create permissions for each resource/action
+  for (const res of resources) {
+    for (const act of actions) {
+      const perm = await prisma.permission.upsert({
+        where: { action_resource: { action: act, resource: res } },
+        update: {},
+        create: { action: act, resource: res, description: `Can ${act.toLowerCase()} ${res.toLowerCase()}` }
+      });
+      allPermissions.push({ action: act, resource: res });
+    }
+  }
+
+  // Create Default Roles
+  const roleNames = ['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER', 'DEPARTMENT_MANAGER', 'PAYROLL_ADMIN', 'RECRUITER', 'EMPLOYEE', 'VIEWER'];
+  const createdRoles: Record<string, any> = {};
+
+  for (const rName of roleNames) {
+    const role = await prisma.role.upsert({
+      where: { name: rName },
+      update: {},
+      create: { name: rName, description: `System ${rName} role`, isSystem: true }
+    });
+    createdRoles[rName] = role;
+  }
+
+  // Link SUPER_ADMIN to ALL MANAGE permissions
+  const manageAllPerm = await prisma.permission.findFirst({ where: { action: 'MANAGE', resource: 'SYSTEM' } });
+  if (manageAllPerm) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: createdRoles['SUPER_ADMIN'].id, permissionId: manageAllPerm.id } },
+      update: {},
+      create: { roleId: createdRoles['SUPER_ADMIN'].id, permissionId: manageAllPerm.id }
+    });
+  }
+
+  // Link HR_ADMIN to Employee/Documents permissions
+  const hrResources = ['EMPLOYEE', 'DOCUMENT', 'ONBOARDING', 'BENEFIT', 'LEAVE'];
+  for (const res of hrResources) {
+    const perms = await prisma.permission.findMany({ where: { resource: res, action: { in: ['CREATE', 'READ', 'UPDATE', 'APPROVE'] } } });
+    for (const p of perms) {
+      await prisma.rolePermission.upsert({
+        where: { roleId_permissionId: { roleId: createdRoles['HR_ADMIN'].id, permissionId: p.id } },
+        update: {},
+        create: { roleId: createdRoles['HR_ADMIN'].id, permissionId: p.id }
+      });
+    }
+  }
 
   // ═══════════════════════════════════════
   // 1. OFFICE LOCATIONS
@@ -247,7 +312,7 @@ async function main() {
   const { employee: superAdminEmp } = await createUser(
     'admin@abatalent.com',
     'Admin@123!',
-    Role.SUPER_ADMIN,
+    'SUPER_ADMIN',
     {
       firstName: 'Rafael',
       lastName: 'Apure',
@@ -264,7 +329,7 @@ async function main() {
   const { employee: hrManagerEmp } = await createUser(
     'hr.manager@abatalent.com',
     'HrManager@123!',
-    Role.HR_MANAGER,
+    'HR_MANAGER',
     {
       firstName: 'María',
       lastName: 'González',
@@ -282,7 +347,7 @@ async function main() {
   await createUser(
     'hr.specialist@abatalent.com',
     'HrSpec@123!',
-    Role.HR_ADMIN,
+    'HR_ADMIN',
     {
       firstName: 'Carlos',
       lastName: 'Mendez',
@@ -300,7 +365,7 @@ async function main() {
   const { employee: techMgrEmp } = await createUser(
     'tech.manager@abatalent.com',
     'TechMgr@123!',
-    Role.DEPARTMENT_MANAGER,
+    'DEPARTMENT_MANAGER',
     {
       firstName: 'James',
       lastName: 'Carter',
@@ -318,7 +383,7 @@ async function main() {
   const { employee: seniorEngEmp } = await createUser(
     'senior.eng@abatalent.com',
     'SenEng@123!',
-    Role.EMPLOYEE,
+    'EMPLOYEE',
     {
       firstName: 'Aisha',
       lastName: 'Johnson',
@@ -336,7 +401,7 @@ async function main() {
   await createUser(
     'eng1@abatalent.com',
     'Eng1@123!',
-    Role.EMPLOYEE,
+    'EMPLOYEE',
     {
       firstName: 'Lucas',
       lastName: 'Silva',
@@ -353,7 +418,7 @@ async function main() {
   await createUser(
     'eng2@abatalent.com',
     'Eng2@123!',
-    Role.EMPLOYEE,
+    'EMPLOYEE',
     {
       firstName: 'Sophie',
       lastName: 'Martin',
@@ -371,7 +436,7 @@ async function main() {
   await createUser(
     'payroll.admin@abatalent.com',
     'Payroll@123!',
-    Role.PAYROLL_ADMIN,
+    'PAYROLL_ADMIN',
     {
       firstName: 'Diana',
       lastName: 'Torres',
@@ -389,7 +454,7 @@ async function main() {
   await createUser(
     'recruiter@abatalent.com',
     'Recruiter@123!',
-    Role.RECRUITER,
+    'RECRUITER',
     {
       firstName: 'Marco',
       lastName: 'Rivera',
@@ -407,7 +472,7 @@ async function main() {
   await createUser(
     'employee@abatalent.com',
     'Employee@123!',
-    Role.EMPLOYEE,
+    'EMPLOYEE',
     {
       firstName: 'Emma',
       lastName: 'Wilson',
@@ -559,20 +624,20 @@ async function main() {
   });
 
   const onboardingTasks = [
-    { title: 'Sign employment contract', category: TaskCategory.DOCUMENTATION, order: 1, due: 1 },
-    { title: 'Complete tax forms (W-4)', category: TaskCategory.DOCUMENTATION, order: 2, due: 1 },
-    { title: 'Submit government ID copy', category: TaskCategory.DOCUMENTATION, order: 3, due: 2 },
-    { title: 'Setup company email', category: TaskCategory.IT_SETUP, order: 4, due: 1 },
-    { title: 'Install required software', category: TaskCategory.IT_SETUP, order: 5, due: 3 },
-    { title: 'Setup VPN access', category: TaskCategory.ACCESS, order: 6, due: 3 },
-    { title: 'Receive laptop & equipment', category: TaskCategory.EQUIPMENT, order: 7, due: 1 },
-    { title: 'Company orientation session', category: TaskCategory.ORIENTATION, order: 8, due: 3 },
-    { title: 'Meet your manager & team', category: TaskCategory.MEETING, order: 9, due: 3 },
-    { title: 'HR policies & handbook review', category: TaskCategory.COMPLIANCE, order: 10, due: 5 },
-    { title: 'Security & data privacy training', category: TaskCategory.TRAINING, order: 11, due: 7 },
-    { title: 'Benefits enrollment', category: TaskCategory.OTHER, order: 12, due: 14 },
-    { title: '30-day check-in with manager', category: TaskCategory.MEETING, order: 13, due: 30 },
-    { title: 'Complete onboarding survey', category: TaskCategory.SURVEY, order: 14, due: 30 },
+    { title: 'Sign employment contract', category: TaskCategory.DOCUMENTATION, order: 1, due: 1, role: 'HR_MANAGER' },
+    { title: 'Complete tax forms (W-4)', category: TaskCategory.DOCUMENTATION, order: 2, due: 1, role: 'EMPLOYEE' },
+    { title: 'Submit government ID copy', category: TaskCategory.DOCUMENTATION, order: 3, due: 2, role: 'EMPLOYEE' },
+    { title: 'Setup company email', category: TaskCategory.IT_SETUP, order: 4, due: 1, role: 'SUPER_ADMIN' },
+    { title: 'Install required software', category: TaskCategory.IT_SETUP, order: 5, due: 3, role: 'EMPLOYEE' },
+    { title: 'Setup VPN access', category: TaskCategory.ACCESS, order: 6, due: 3, role: 'SUPER_ADMIN' },
+    { title: 'Receive laptop & equipment', category: TaskCategory.EQUIPMENT, order: 7, due: 1, role: 'HR_ADMIN' },
+    { title: 'Company orientation session', category: TaskCategory.ORIENTATION, order: 8, due: 3, role: 'HR_MANAGER' },
+    { title: 'Meet your manager & team', category: TaskCategory.MEETING, order: 9, due: 3, role: 'DEPARTMENT_MANAGER' },
+    { title: 'HR policies & handbook review', category: TaskCategory.COMPLIANCE, order: 10, due: 5, role: 'EMPLOYEE' },
+    { title: 'Security & data privacy training', category: TaskCategory.TRAINING, order: 11, due: 7, role: 'EMPLOYEE' },
+    { title: 'Benefits enrollment', category: TaskCategory.OTHER, order: 12, due: 14, role: 'EMPLOYEE' },
+    { title: '30-day check-in with manager', category: TaskCategory.MEETING, order: 13, due: 30, role: 'DEPARTMENT_MANAGER' },
+    { title: 'Complete onboarding survey', category: TaskCategory.SURVEY, order: 14, due: 30, role: 'EMPLOYEE' },
   ];
 
   for (const t of onboardingTasks) {
@@ -588,6 +653,7 @@ async function main() {
           order: t.order,
           dueDays: t.due,
           isRequired: true,
+          roleId: createdRoles[t.role]?.id,
         },
       });
     }
@@ -610,16 +676,16 @@ async function main() {
   });
 
   const offboardingTasks = [
-    { title: 'Exit interview scheduled', category: TaskCategory.EXIT_INTERVIEW, order: 1, due: -7 },
-    { title: 'Knowledge transfer documentation', category: TaskCategory.KNOWLEDGE_TRANSFER, order: 2, due: -5 },
-    { title: 'Return laptop & equipment', category: TaskCategory.RETURN_EQUIPMENT, order: 3, due: 0 },
-    { title: 'Return access badges & keys', category: TaskCategory.RETURN_EQUIPMENT, order: 4, due: 0 },
-    { title: 'Revoke system access (IT)', category: TaskCategory.IT_SETUP, order: 5, due: 0 },
-    { title: 'Complete exit interview', category: TaskCategory.EXIT_INTERVIEW, order: 6, due: -2 },
-    { title: 'Final payroll processing', category: TaskCategory.DOCUMENTATION, order: 7, due: 0 },
-    { title: 'Benefits termination notice', category: TaskCategory.COMPLIANCE, order: 8, due: 0 },
-    { title: 'Reference letter (if applicable)', category: TaskCategory.DOCUMENTATION, order: 9, due: 5 },
-    { title: 'Update org chart', category: TaskCategory.OTHER, order: 10, due: 1 },
+    { title: 'Exit interview scheduled', category: TaskCategory.EXIT_INTERVIEW, order: 1, due: -7, role: 'HR_MANAGER' },
+    { title: 'Knowledge transfer documentation', category: TaskCategory.KNOWLEDGE_TRANSFER, order: 2, due: -5, role: 'EMPLOYEE' },
+    { title: 'Return laptop & equipment', category: TaskCategory.RETURN_EQUIPMENT, order: 3, due: 0, role: 'HR_ADMIN' },
+    { title: 'Return access badges & keys', category: TaskCategory.RETURN_EQUIPMENT, order: 4, due: 0, role: 'HR_ADMIN' },
+    { title: 'Revoke system access (IT)', category: TaskCategory.IT_SETUP, order: 5, due: 0, role: 'SUPER_ADMIN' },
+    { title: 'Complete exit interview', category: TaskCategory.EXIT_INTERVIEW, order: 6, due: -2, role: 'HR_MANAGER' },
+    { title: 'Final payroll processing', category: TaskCategory.DOCUMENTATION, order: 7, due: 0, role: 'PAYROLL_ADMIN' },
+    { title: 'Benefits termination notice', category: TaskCategory.COMPLIANCE, order: 8, due: 0, role: 'HR_ADMIN' },
+    { title: 'Reference letter (if applicable)', category: TaskCategory.DOCUMENTATION, order: 9, due: 5, role: 'DEPARTMENT_MANAGER' },
+    { title: 'Update org chart', category: TaskCategory.OTHER, order: 10, due: 1, role: 'HR_ADMIN' },
   ];
 
   for (const t of offboardingTasks) {
@@ -635,6 +701,7 @@ async function main() {
           order: t.order,
           dueDays: t.due,
           isRequired: true,
+          roleId: createdRoles[t.role]?.id,
         },
       });
     }
@@ -645,25 +712,40 @@ async function main() {
   // ═══════════════════════════════════════
   console.log('📅 Creating public holidays...');
 
-  const holidays2025 = [
-    { name: 'New Year\'s Day',          date: '2025-01-01' },
-    { name: 'Martin Luther King Jr. Day', date: '2025-01-20' },
-    { name: 'Presidents\' Day',         date: '2025-02-17' },
-    { name: 'Memorial Day',             date: '2025-05-26' },
-    { name: 'Juneteenth',              date: '2025-06-19' },
-    { name: 'Independence Day',         date: '2025-07-04' },
-    { name: 'Labor Day',               date: '2025-09-01' },
-    { name: 'Columbus Day',            date: '2025-10-13' },
-    { name: 'Veterans Day',            date: '2025-11-11' },
-    { name: 'Thanksgiving Day',        date: '2025-11-27' },
-    { name: 'Christmas Day',           date: '2025-12-25' },
+  const holidays2026 = [
+    { name: 'New Year\'s Day',          date: '2026-01-01' },
+    { name: 'Martin Luther King Jr. Day', date: '2026-01-19' },
+    { name: 'Memorial Day',             date: '2026-05-25' },
+    { name: 'Independence Day',         date: '2026-07-04' },
+    { name: 'Labor Day',               date: '2026-09-07' },
+    { name: 'Thanksgiving Day',        date: '2026-11-26' },
+    { name: 'Christmas Day',           date: '2026-12-25' },
   ];
 
-  for (const h of holidays2025) {
+  for (const h of holidays2026) {
     await prisma.publicHoliday.upsert({
       where: { date_country: { date: new Date(h.date), country: 'US' } },
       update: {},
       create: { name: h.name, date: new Date(h.date), country: 'US' },
+    });
+  }
+
+  // ═══════════════════════════════════════
+  // 9.1 LEAVE POLICIES
+  // ═══════════════════════════════════════
+  console.log('🏖️  Creating leave policies...');
+
+  const leavePolicies = [
+    { leaveType: LeaveType.VACATION, name: 'Vacaciones Anuales', daysAllowed: 15, carryoverDays: 5, minNoticeDays: 5, maxConsecutiveDays: 14 },
+    { leaveType: LeaveType.SICK,    name: 'Permiso Médico',     daysAllowed: 10, carryoverDays: 0, minNoticeDays: 0, maxConsecutiveDays: 99 },
+    { leaveType: LeaveType.PERSONAL, name: 'Asuntos Personales',  daysAllowed: 3,  carryoverDays: 0, minNoticeDays: 2, maxConsecutiveDays: 3 },
+  ];
+
+  for (const p of leavePolicies) {
+    await prisma.leavePolicy.upsert({
+      where: { leaveType: p.leaveType },
+      update: p,
+      create: p,
     });
   }
 
@@ -677,7 +759,8 @@ async function main() {
     { key: 'company.logo',       value: '/assets/logo.png',        category: 'general', isPublic: true },
     { key: 'company.currency',   value: 'USD',                     category: 'payroll', isPublic: true },
     { key: 'payroll.frequency',  value: 'MONTHLY',                 category: 'payroll', isPublic: false },
-    { key: 'payroll.tax_rate',   value: 0.22,                      category: 'payroll', isPublic: false },
+    { key: 'payroll.tax_rate',   value: 0.05,                      category: 'payroll', isPublic: false },
+    { key: 'payroll.ss_rate',    value: 0.04,                      category: 'payroll', isPublic: false },
     { key: 'attendance.work_hours_per_day', value: 8,              category: 'attendance', isPublic: true },
     { key: 'attendance.overtime_threshold', value: 40,             category: 'attendance', isPublic: true },
     { key: 'leave.fiscal_year_start', value: '01-01',              category: 'leave', isPublic: false },

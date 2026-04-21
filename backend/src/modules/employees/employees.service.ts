@@ -1,10 +1,15 @@
 import bcrypt from 'bcryptjs';
-import { Role, Prisma } from '@prisma/client';
+import { Prisma, DocumentType, AuditAction } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { env } from '../../config/env';
 import { Conflict, NotFound } from '../../common/utils/apiError';
 import { parsePagination, paginate } from '../../common/utils/response';
-import type { CreateEmployeeDto, UpdateEmployeeDto, UpdateStatusDto, EmployeeQuery } from './employees.types';
+import { storageService } from '../../common/services/storage.service';
+import type { FileData } from '../../common/services/storage.service';
+import type { 
+  CreateEmployeeDto, UpdateEmployeeDto, 
+  EmployeeQuery, EmergencyContactDto, BankInfoDto 
+} from './Employees.types';
 
 // ── Common selects ────────────────────────────────────────────────────────────
 const LIST_SELECT = {
@@ -24,37 +29,47 @@ const DETAIL_SELECT = {
   postalCode: true, country: true,
   emergencyName: true, emergencyPhone: true, emergencyRelation: true,
   baseSalary: true, currency: true, salaryFrequency: true,
+  bankName: true, bankAccountNumber: true, bankRoutingNumber: true, taxId: true,
   probationEndDate: true, terminationDate: true, terminationReason: true,
   isRemote: true, timeZone: true, createdAt: true, updatedAt: true,
   position: { select: { id: true, title: true, code: true } },
   location: { select: { id: true, name: true, city: true } },
   directReports: { select: { id: true, firstName: true, lastName: true, jobTitle: true, avatarUrl: true } },
-  user: { select: { id: true, email: true, role: true, lastLoginAt: true } },
+  user: { select: { id: true, email: true, lastLoginAt: true, roles: { select: { role: { select: { name: true } } } } } },
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
 export class EmployeesService {
-  // ── List ─────────────────────────────────────────────────────────────────
+  // ── List (Advanced Search) ────────────────────────────────────────────────
   async findAll(query: EmployeeQuery) {
     const { page, limit, skip } = parsePagination(query);
-
-    // Build dynamic where clause
     const where: Prisma.EmployeeWhereInput = { deletedAt: null };
 
+    // Advanced Filters
     if (query.search) {
       where.OR = [
         { firstName: { contains: query.search, mode: 'insensitive' } },
         { lastName:  { contains: query.search, mode: 'insensitive' } },
         { jobTitle:  { contains: query.search, mode: 'insensitive' } },
         { employeeCode: { contains: query.search, mode: 'insensitive' } },
-        { user: { email: { contains: query.search, mode: 'insensitive' } } },
       ];
     }
-
+    if (query.firstName)    where.firstName = { contains: query.firstName, mode: 'insensitive' };
+    if (query.lastName)     where.lastName  = { contains: query.lastName, mode: 'insensitive' };
+    if (query.employeeCode) where.employeeCode = { contains: query.employeeCode, mode: 'insensitive' };
     if (query.departmentId) where.departmentId = query.departmentId;
     if (query.status)       where.employmentStatus = query.status;
     if (query.type)         where.employmentType = query.type;
     if (query.managerId)    where.managerId = query.managerId;
+
+    // Search by document (Tax ID or Bank Account as proxy if National ID not in separate field yet)
+    if (query.document) {
+      where.OR = [
+        ...(where.OR || []),
+        { taxId: { contains: query.document, mode: 'insensitive' } },
+        { bankAccountNumber: { contains: query.document, mode: 'insensitive' } },
+      ];
+    }
 
     const orderBy = { [query.sortBy ?? 'firstName']: query.sortOrder ?? 'asc' };
 
@@ -76,85 +91,52 @@ export class EmployeesService {
     return emp;
   }
 
-  // ── Get by user ID ────────────────────────────────────────────────────────
-  async findByUserId(userId: string) {
-    const emp = await prisma.employee.findUnique({
-      where: { userId, deletedAt: null },
-      select: DETAIL_SELECT,
-    });
-    if (!emp) throw NotFound('Employee');
-    return emp;
-  }
-
-  // ── Create (also creates User account) ───────────────────────────────────
-  async create(dto: CreateEmployeeDto) {
+  // ── Create ────────────────────────────────────────────────────────────────
+  async create(dto: CreateEmployeeDto, creatorId?: string) {
     const existing = await prisma.user.findUnique({ where: { email: dto.email.toLowerCase() } });
     if (existing) throw Conflict('A user with this email already exists');
 
     const passwordHash = await bcrypt.hash(dto.password, env.BCRYPT_ROUNDS);
     const employeeCode = await this.nextCode();
 
+    const { roleIds, email, password, ...empData } = dto;
+
     const employee = await prisma.employee.create({
       data: {
+        ...(empData as any),
         employeeCode,
-        firstName: dto.firstName,
-        middleName: dto.middleName,
-        lastName: dto.lastName,
-        gender: dto.gender,
-        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
-        maritalStatus: dto.maritalStatus,
-        nationality: dto.nationality,
-        workPhone: dto.workPhone,
-        personalPhone: dto.personalPhone,
-        personalEmail: dto.personalEmail,
-        addressLine1: dto.addressLine1,
-        addressLine2: dto.addressLine2,
-        city: dto.city,
-        state: dto.state,
-        postalCode: dto.postalCode,
-        country: dto.country,
-        emergencyName: dto.emergencyName,
-        emergencyPhone: dto.emergencyPhone,
-        emergencyRelation: dto.emergencyRelation,
-        jobTitle: dto.jobTitle,
-        employmentType: dto.employmentType,
-        hireDate: dto.hireDate ? new Date(dto.hireDate) : new Date(),
-        probationEndDate: dto.probationEndDate ? new Date(dto.probationEndDate) : undefined,
-        departmentId: dto.departmentId,
-        positionId: dto.positionId,
-        managerId: dto.managerId,
-        locationId: dto.locationId,
-        baseSalary: dto.baseSalary,
-        currency: dto.currency,
-        salaryFrequency: dto.salaryFrequency,
-        bankName: dto.bankName,
-        bankAccountNumber: dto.bankAccountNumber,
-        isRemote: dto.isRemote,
-        timeZone: dto.timeZone,
+        dateOfBirth: empData.dateOfBirth ? new Date(empData.dateOfBirth) : undefined,
+        hireDate: empData.hireDate ? new Date(empData.hireDate) : new Date(),
+        probationEndDate: empData.probationEndDate ? new Date(empData.probationEndDate) : undefined,
         user: {
           create: {
-            email: dto.email.toLowerCase(),
+            email: email.toLowerCase(),
             passwordHash,
-            role: dto.role as Role,
             isActive: true,
             isEmailVerified: true,
+            roles: roleIds ? {
+              create: roleIds.map(roleId => ({ roleId }))
+            } : undefined
           },
         },
       },
       select: DETAIL_SELECT,
     });
 
+    // Initial Audit Log
+    await this.logAudit(creatorId, 'CREATE', 'Employee', employee.id, null, employee);
+
     return employee;
   }
 
-  // ── Update ────────────────────────────────────────────────────────────────
-  async update(id: string, dto: UpdateEmployeeDto) {
-    await this.findById(id); // existence check
+  // ── Update with Detailed Auditing ──────────────────────────────────────────
+  async update(id: string, dto: UpdateEmployeeDto, actorId?: string) {
+    const oldState = await this.findById(id);
 
     const employee = await prisma.employee.update({
       where: { id },
       data: {
-        ...dto,
+        ...(dto as any),
         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
         hireDate: dto.hireDate ? new Date(dto.hireDate) : undefined,
         probationEndDate: dto.probationEndDate ? new Date(dto.probationEndDate) : undefined,
@@ -162,87 +144,152 @@ export class EmployeesService {
       select: DETAIL_SELECT,
     });
 
+    // Diff values for audit
+    const diff = this.calculateDiff(oldState, employee);
+    if (Object.keys(diff.newData).length > 0) {
+      await this.logAudit(actorId, 'UPDATE', 'Employee', id, diff.oldData, diff.newData);
+    }
+
     return employee;
   }
 
-  // ── Update status (terminate, suspend, etc.) ──────────────────────────────
-  async updateStatus(id: string, dto: UpdateStatusDto) {
-    await this.findById(id);
+  // ── Dedicated Updates ─────────────────────────────────────────────────────
+  async updateEmergencyContact(id: string, dto: EmergencyContactDto, actorId?: string) {
+    return this.update(id, dto, actorId);
+  }
 
-    return prisma.employee.update({
-      where: { id },
+  async updateBankInfo(id: string, dto: BankInfoDto, actorId?: string) {
+    return this.update(id, dto, actorId);
+  }
+
+  // ── Document Management ───────────────────────────────────────────────────
+  async uploadDocument(employeeId: string, type: DocumentType, file: FileData, actorId?: string) {
+    await this.findById(employeeId); // check existence
+
+    const { url, key } = await storageService.upload(file, `employees/${employeeId}/docs`);
+
+    const doc = await prisma.document.create({
       data: {
-        employmentStatus: dto.status,
-        terminationDate:
-          dto.status === 'TERMINATED' && dto.effectiveDate
-            ? new Date(dto.effectiveDate)
-            : undefined,
-        terminationReason:
-          dto.status === 'TERMINATED' ? dto.reason : undefined,
-      },
+        employeeId,
+        type,
+        name: file.originalName,
+        fileUrl: url,
+        fileKey: key,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+      }
+    });
+
+    await this.logAudit(actorId, 'CREATE', 'Document', doc.id, null, { employeeId, type, name: file.originalName });
+    return doc;
+  }
+
+  async listDocuments(employeeId: string) {
+    return prisma.document.findMany({
+      where: { employeeId, deletedAt: null },
+      orderBy: { uploadedAt: 'desc' },
+    });
+  }
+
+  async deleteDocument(id: string, actorId?: string) {
+    const doc = await prisma.document.findUnique({ where: { id } });
+    if (!doc) throw NotFound('Document');
+
+    await prisma.document.update({
+      where: { id },
+      data: { deletedAt: new Date() }
+    });
+
+    await storageService.delete(doc.fileKey!);
+    await this.logAudit(actorId, 'DELETE', 'Document', id, doc, null);
+  }
+
+  // ── Audit History for Employee ────────────────────────────────────────────
+  async getAuditHistory(id: string) {
+    return prisma.auditLog.findMany({
+      where: { resource: 'Employee', resourceId: id },
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { email: true } } }
+    });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  private calculateDiff(oldObj: any, newObj: any) {
+    const oldData: any = {};
+    const newData: any = {};
+
+    for (const key in newObj) {
+      if (['updatedAt', 'createdAt', 'user', 'department', 'manager', 'position', 'location'].includes(key)) continue;
+      
+      const oldVal = oldObj[key];
+      const newVal = newObj[key];
+
+      // Deep compare for dates/objects if needed, but for root fields:
+      if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+        oldData[key] = oldVal;
+        newData[key] = newVal;
+      }
+    }
+    return { oldData, newData };
+  }
+
+  private async logAudit(userId: string | undefined, action: AuditAction, resource: string, resourceId: string, oldValues: any, newValues: any) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId,
+          action,
+          resource,
+          resourceId,
+          oldValues: oldValues ? JSON.parse(JSON.stringify(oldValues)) : undefined,
+          newValues: newValues ? JSON.parse(JSON.stringify(newValues)) : undefined,
+          description: `${action} ${resource} #${resourceId}`,
+        }
+      });
+    } catch (err) {
+      console.error('Audit Log failed:', err);
+    }
+  }
+
+  async softDelete(id: string, actorId?: string) {
+    const employee = await this.findById(id);
+    await prisma.$transaction([
+      prisma.employee.update({ where: { id }, data: { deletedAt: new Date(), employmentStatus: 'TERMINATED' } }),
+      prisma.user.update({ where: { id: employee.user!.id }, data: { deletedAt: new Date(), isActive: false } })
+    ]);
+    await this.logAudit(actorId, 'SOFT_DELETE', 'Employee', id, employee, { deletedAt: new Date() });
+  }
+
+  async getStats() {
+    const [total, byStatus, byType] = await Promise.all([
+      prisma.employee.count({ where: { deletedAt: null } }),
+      prisma.employee.groupBy({ by: ['employmentStatus'], _count: true, where: { deletedAt: null } }),
+      prisma.employee.groupBy({ by: ['employmentType'], _count: true, where: { deletedAt: null } }),
+    ]);
+    return { total, byStatus, byType };
+  }
+
+  async getTeam(managerId: string) {
+    return prisma.employee.findMany({
+      where: { managerId, deletedAt: null },
       select: LIST_SELECT,
     });
   }
 
-  // ── Soft delete ───────────────────────────────────────────────────────────
-  async softDelete(id: string) {
-    await this.findById(id);
-    await prisma.employee.update({
-      where: { id },
-      data: { deletedAt: new Date(), employmentStatus: 'TERMINATED' },
-    });
-  }
-
-  // ── Org chart path (ancestors) ────────────────────────────────────────────
-  async getOrgPath(id: string): Promise<Array<{ id: string; firstName: string; lastName: string; jobTitle: string }>> {
+  async getOrgPath(id: string) {
     const path = [];
-    let currentId: string | null = id;
-
-    while (currentId) {
-      const emp = await prisma.employee.findUnique({
-        where: { id: currentId, deletedAt: null },
-        select: { id: true, firstName: true, lastName: true, jobTitle: true, managerId: true },
-      });
-      if (!emp) break;
-      path.unshift({ id: emp.id, firstName: emp.firstName, lastName: emp.lastName, jobTitle: emp.jobTitle });
-      currentId = emp.managerId;
-    }
-
-    return path;
-  }
-
-  // ── Direct reports tree ───────────────────────────────────────────────────
-  async getTeam(managerId: string) {
-    return prisma.employee.findMany({
-      where: { managerId, deletedAt: null },
-      select: {
-        id: true, firstName: true, lastName: true, jobTitle: true,
-        avatarUrl: true, employmentStatus: true,
-        _count: { select: { directReports: true } },
-      },
+    let current = await prisma.employee.findUnique({
+      where: { id },
+      select: { id: true, firstName: true, lastName: true, managerId: true }
     });
-  }
-
-  // ── Stats ─────────────────────────────────────────────────────────────────
-  async getStats() {
-    const [total, byStatus, byDept, newThisMonth] = await Promise.all([
-      prisma.employee.count({ where: { deletedAt: null } }),
-      prisma.employee.groupBy({ by: ['employmentStatus'], where: { deletedAt: null }, _count: true }),
-      prisma.employee.groupBy({
-        by: ['departmentId'], where: { deletedAt: null },
-        _count: true,
-        orderBy: { _count: { departmentId: 'desc' } },
-        take: 5,
-      }),
-      prisma.employee.count({
-        where: {
-          deletedAt: null,
-          hireDate: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
-        },
-      }),
-    ]);
-
-    return { total, byStatus, byDept, newThisMonth };
+    while (current?.managerId) {
+      current = await prisma.employee.findUnique({
+        where: { id: current.managerId },
+        select: { id: true, firstName: true, lastName: true, managerId: true }
+      });
+      if (current) path.unshift(current);
+    }
+    return path;
   }
 
   private async nextCode(): Promise<string> {

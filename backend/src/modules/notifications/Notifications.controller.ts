@@ -1,31 +1,34 @@
-﻿import { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { asyncHandler } from '../../common/utils/asyncHandler';
-import { sendOk, sendCreated, sendNoContent } from '../../common/utils/response';
-import { NotificationsService } from './Notifications.service';
+import { sendOk, sendNoContent } from '../../common/utils/response';
+import { notificationsService } from './Notifications.service';
 
 export class NotificationsController {
+  
   static list = asyncHandler(async (req: Request, res: Response) => {
-    const result = await NotificationsService.findAll(req.query as never);
-    res.json({ success: true, ...result });
+    const userId = req.user!.id;
+    const result = await notificationsService.findAll({ ...req.query, userId } as any);
+    sendOk(res, result);
   });
 
-  static show = asyncHandler(async (req: Request, res: Response) => {
-    const item = await NotificationsService.findById(req.params.id);
-    sendOk(res, item);
+  static markAsRead = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const updated = await notificationsService.markAsRead(req.params.id, userId);
+    sendOk(res, updated, 'Notification marked as read');
   });
 
-  static create = asyncHandler(async (req: Request, res: Response) => {
-    const item = await NotificationsService.create(req.body);
-    sendCreated(res, item);
-  });
-
-  static update = asyncHandler(async (req: Request, res: Response) => {
-    const item = await NotificationsService.update(req.params.id, req.body);
-    sendOk(res, item);
+  static markAllAsRead = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    await notificationsService.markAllAsRead(userId);
+    sendOk(res, null, 'All notifications marked as read');
   });
 
   static remove = asyncHandler(async (req: Request, res: Response) => {
-    await NotificationsService.remove(req.params.id);
+    const userId = req.user!.id;
+    await notificationsService.remove(req.params.id, userId);
     sendNoContent(res);
   });
 }
+
+
+

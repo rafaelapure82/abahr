@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../../common/utils/asyncHandler';
 import { sendOk, sendCreated, sendNoContent } from '../../common/utils/response';
-import { employeesService } from './employees.service';
+import { employeesService } from './Employees.service';
+import { BadRequest } from '../../common/utils/apiError';
 
 export class EmployeesController {
   // GET /employees
@@ -36,21 +37,77 @@ export class EmployeesController {
 
   // POST /employees
   static create = asyncHandler(async (req: Request, res: Response) => {
-    const employee = await employeesService.create(req.body);
+    const actorId = req.user?.sub;
+    const employee = await employeesService.create(req.body, actorId);
     sendCreated(res, employee, 'Employee created successfully');
   });
 
   // PATCH /employees/:id
   static update = asyncHandler(async (req: Request, res: Response) => {
-    const employee = await employeesService.update(req.params.id, req.body);
+    const actorId = req.user?.sub;
+    const employee = await employeesService.update(req.params.id, req.body, actorId);
     sendOk(res, employee, 'Employee updated successfully');
   });
 
-  // PATCH /employees/:id/status
-  static updateStatus = asyncHandler(async (req: Request, res: Response) => {
-    const employee = await employeesService.updateStatus(req.params.id, req.body);
-    sendOk(res, employee, 'Employee status updated');
+  // PATCH /employees/:id/bank-info
+  static updateBankInfo = asyncHandler(async (req: Request, res: Response) => {
+    const actorId = req.user?.sub;
+    const employee = await employeesService.updateBankInfo(req.params.id, req.body, actorId);
+    sendOk(res, employee, 'Bank information updated');
   });
+
+  // PATCH /employees/:id/emergency-contact
+  static updateEmergencyContact = asyncHandler(async (req: Request, res: Response) => {
+    const actorId = req.user?.sub;
+    const employee = await employeesService.updateEmergencyContact(req.params.id, req.body, actorId);
+    sendOk(res, employee, 'Emergency contact updated');
+  });
+
+  // GET /employees/:id/history
+  static getHistory = asyncHandler(async (req: Request, res: Response) => {
+    const history = await employeesService.getAuditHistory(req.params.id);
+    sendOk(res, history);
+  });
+
+  // ── Documents ───────────────────────────────────────────────────────────
+  
+  // POST /employees/:id/documents
+  static uploadDoc = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.file) throw BadRequest('No file uploaded');
+    const { type } = req.body;
+    if (!type) throw BadRequest('Document type is required');
+
+    const actorId = req.user?.sub;
+    const doc = await employeesService.uploadDocument(
+      req.params.id, 
+      type, 
+      {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        path: req.file.path
+      },
+      actorId
+    );
+
+    sendCreated(res, doc, 'Document uploaded successfully');
+  });
+
+  // GET /employees/:id/documents
+  static listDocs = asyncHandler(async (req: Request, res: Response) => {
+    const docs = await employeesService.listDocuments(req.params.id);
+    sendOk(res, docs);
+  });
+
+  // DELETE /employees/documents/:docId
+  static deleteDoc = asyncHandler(async (req: Request, res: Response) => {
+    const actorId = req.user?.sub;
+    await employeesService.deleteDocument(req.params.docId, actorId);
+    sendNoContent(res);
+  });
+
+  // ── Legacy / Other ──────────────────────────────────────────────────────
 
   // DELETE /employees/:id
   static remove = asyncHandler(async (req: Request, res: Response) => {
@@ -60,7 +117,8 @@ export class EmployeesController {
 
   // GET /employees/me  (self-service)
   static me = asyncHandler(async (req: Request, res: Response) => {
-    const employee = await employeesService.findByUserId(req.user!.sub);
+    const employee = await employeesService.findById(req.user!.sub);
     sendOk(res, employee);
   });
 }
+

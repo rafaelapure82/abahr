@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { Role } from '@prisma/client';
 import { BenefitsController } from './Benefits.controller';
 import { authJWT } from '../../middlewares/authJWT';
@@ -6,18 +6,22 @@ import { rbac } from '../../middlewares/rbac';
 import { validate } from '../../middlewares/validate';
 import { BenefitsQuerySchema } from './Benefits.types';
 
-export const BenefitsRouter = Router();
+export const benefitsRouter = Router();
 
-BenefitsRouter.use(authJWT);
 
-BenefitsRouter.get(
+benefitsRouter.use(authJWT);
+
+benefitsRouter.get(
   '/',
-  rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER, Role.DEPARTMENT_MANAGER),
+  rbac(['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER', 'DEPARTMENT_MANAGER']),
   validate(BenefitsQuerySchema, 'query'),
   BenefitsController.list,
 );
 
-BenefitsRouter.get('/:id',  BenefitsController.show);
-BenefitsRouter.post('/',    rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER), BenefitsController.create);
-BenefitsRouter.patch('/:id',rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER), BenefitsController.update);
-BenefitsRouter.delete('/:id',rbac(Role.SUPER_ADMIN, Role.HR_ADMIN), BenefitsController.remove);
+benefitsRouter.get('/:id',  BenefitsController.show);
+benefitsRouter.post('/',    rbac(['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER']), BenefitsController.create);
+benefitsRouter.patch('/:id',rbac(['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER']), BenefitsController.update);
+benefitsRouter.delete('/:id',rbac(['SUPER_ADMIN', 'HR_ADMIN']), BenefitsController.remove);
+
+
+

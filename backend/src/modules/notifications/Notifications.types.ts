@@ -1,9 +1,21 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
+import { NotificationType, NotificationChannel } from '@prisma/client';
 
-// In-app and email notifications
-export const NotificationsQuerySchema = z.object({
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(20),
-  search: z.string().optional(),
+export const notificationSchema = z.object({
+  userId: z.string().uuid(),
+  type: z.nativeEnum(NotificationType),
+  channel: z.nativeEnum(NotificationChannel).optional().default('IN_APP'),
+  title: z.string().min(1),
+  message: z.string().min(1),
+  data: z.any().optional(),
+  link: z.string().optional(),
 });
-export type NotificationsQuery = z.infer<typeof NotificationsQuerySchema>;
+
+export const notificationsQuerySchema = z.object({
+  page: z.string().optional().transform(Number),
+  limit: z.string().optional().transform(Number),
+  isRead: z.string().optional().transform(v => v === 'true'),
+});
+
+export type CreateNotificationDto = z.infer<typeof notificationSchema>;
+export type NotificationsQuery = z.infer<typeof notificationsQuerySchema>;

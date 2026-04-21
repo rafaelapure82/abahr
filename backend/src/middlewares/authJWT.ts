@@ -2,14 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 import { prisma } from '../config/prisma';
+import redis from '../config/redis';
 import { Unauthorized } from '../common/utils/apiError';
 
 // ── Extend Express Request type ───────────────────────────────────────────────
 export interface JwtPayload {
   sub: string;       // userId
-  email: string;
-  role: string;
-  employeeId?: string;
+  sid: string;       // sessionId (single session check)
   iat: number;
   exp: number;
 }
@@ -17,7 +16,7 @@ export interface JwtPayload {
 declare global {
   namespace Express {
     interface Request {
-      user?: JwtPayload;
+      user?: JwtPayload & { id: string };
     }
   }
 }
@@ -29,7 +28,6 @@ export const authJWT = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    // Support Bearer token in Authorization header
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
       throw Unauthorized('No authentication token provided');
@@ -47,17 +45,27 @@ export const authJWT = async (
       throw Unauthorized('Invalid token');
     }
 
-    // Verify user is still active in DB (catches deactivated accounts)
+    // 1. Single Session Verification (Redis)
+    const activeSessionId = await redis.get(`user:session:${payload.sub}`);
+    if (!activeSessionId || activeSessionId !== payload.sid) {
+      throw Unauthorized('Session expired or invalidated (Logged in elsewhere)');
+    }
+
+    // 2. Verify user is still active in DB
     const user = await prisma.user.findUnique({
       where: { id: payload.sub, deletedAt: null },
-      select: { id: true, isActive: true, role: true },
+      select: { id: true, isActive: true },
     });
 
     if (!user) throw Unauthorized('User not found');
     if (!user.isActive) throw Unauthorized('Account is deactivated');
 
     // Attach to request
-    req.user = payload;
+    req.user = { 
+      ...payload, 
+      id: user.id 
+    } as any;
+
     next();
   } catch (err) {
     next(err);
@@ -76,7 +84,7 @@ export const optionalAuth = async (
   try {
     const token = authHeader.split(' ')[1];
     const payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
-    req.user = payload;
+    req.user = payload as any;
   } catch {
     // Silently ignore invalid tokens for optional routes
   }

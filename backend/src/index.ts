@@ -20,19 +20,22 @@ import { requestId } from './middlewares/auditLog';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 
 // Module Routers
-import { authRouter }          from './modules/auth/auth.routes';
-import { employeesRouter }     from './modules/employees/employees.routes';
-import { departmentsRouter }   from './modules/departments/departments.routes';
-import { attendanceRouter }    from './modules/attendance/attendance.routes';
-import { leavesRouter }        from './modules/leaves/leaves.routes';
-import { payrollRouter }       from './modules/payroll/payroll.routes';
-import { recruitmentRouter }   from './modules/recruitment/recruitment.routes';
-import { performanceRouter }   from './modules/performance/performance.routes';
-import { benefitsRouter }      from './modules/benefits/benefits.routes';
-import { onboardingRouter }    from './modules/onboarding/onboarding.routes';
-import { offboardingRouter }   from './modules/offboarding/offboarding.routes';
-import { notificationsRouter } from './modules/notifications/notifications.routes';
-import { dashboardRouter }     from './modules/dashboard/dashboard.routes';
+import authyUsersRouter from './modules/authyusers/AuthyUsers.routes';
+import { employeesRouter }     from './modules/employees/Employees.routes';
+import { departmentsRouter }   from './modules/departments/Departments.routes';
+import { attendanceRouter }    from './modules/attendance/Attendance.routes';
+import { leavesRouter }        from './modules/leaves/Leaves.routes';
+import { payrollRouter }       from './modules/payroll/Payroll.routes';
+import { recruitmentRouter }   from './modules/recruitment/Recruitment.routes';
+import { performanceRouter }   from './modules/performance/Performance.routes';
+import { benefitsRouter }      from './modules/benefits/Benefits.routes';
+import { onboardingRouter }    from './modules/onboarding/Onboarding.routes';
+import { offboardingRouter }   from './modules/offboarding/Offboarding.routes';
+import { notificationsRouter } from './modules/notifications/Notifications.routes';
+import { dashboardRouter }     from './modules/dashboard/Dashboard.routes';
+import { reportsRouter }       from './modules/reports/Reports.routes';
+import { webhooksRouter }      from './modules/webhooks/Webhooks.routes';
+import holidaysRouter        from './modules/holidays/Holidays.routes';
 
 // ═══════════════════════════════════════════════════════════════════
 //  APP FACTORY
@@ -105,7 +108,7 @@ export function createApp(): { app: Application; io: SocketIO; httpServer: Serve
   // ── API Routes ─────────────────────────────────────────────────────────
   const API = '/api/v1';
 
-  app.use(`${API}/auth`,          authRouter);
+  app.use(`${API}/auth`,          authyUsersRouter);
   app.use(`${API}/employees`,     employeesRouter);
   app.use(`${API}/departments`,   departmentsRouter);
   app.use(`${API}/attendance`,    attendanceRouter);
@@ -118,6 +121,9 @@ export function createApp(): { app: Application; io: SocketIO; httpServer: Serve
   app.use(`${API}/offboarding`,   offboardingRouter);
   app.use(`${API}/notifications`, notificationsRouter);
   app.use(`${API}/dashboard`,     dashboardRouter);
+  app.use(`${API}/reports`,       reportsRouter);
+  app.use(`${API}/webhooks`,      webhooksRouter);
+  app.use(`${API}/holidays`,      holidaysRouter);
 
   // ── Error handling (must be last) ─────────────────────────────────────
   app.use(notFoundHandler);

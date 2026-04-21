@@ -1,4 +1,4 @@
-﻿import { prisma } from '../../config/prisma';
+import { prisma } from '../../config/prisma';
 import { parsePagination, paginate } from '../../common/utils/response';
 import { NotFound } from '../../common/utils/apiError';
 import type { RecruitmentQuery } from './Recruitment.types';
@@ -35,4 +35,5 @@ export class RecruitmentService {
   }
 }
 
-export const RecruitmentService = new RecruitmentService();
+export const recruitmentService = new RecruitmentService();
+

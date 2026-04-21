@@ -1,23 +1,59 @@
-﻿import { Router } from 'express';
-import { Role } from '@prisma/client';
+import { Router } from 'express';
 import { PayrollController } from './Payroll.controller';
 import { authJWT } from '../../middlewares/authJWT';
 import { rbac } from '../../middlewares/rbac';
 import { validate } from '../../middlewares/validate';
-import { PayrollQuerySchema } from './Payroll.types';
+import { createPayrollPeriodSchema, payrollQuerySchema } from './Payroll.types';
 
-export const PayrollRouter = Router();
+export const payrollRouter = Router();
 
-PayrollRouter.use(authJWT);
 
-PayrollRouter.get(
-  '/',
-  rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER, Role.DEPARTMENT_MANAGER),
-  validate(PayrollQuerySchema, 'query'),
-  PayrollController.list,
+// All routes require authentication
+payrollRouter.use(authJWT);
+
+payrollRouter.post(
+  '/', 
+  rbac(['MANAGE:PAYROLL', 'MANAGE:ALL']), 
+  validate(createPayrollPeriodSchema), 
+  PayrollController.generate
 );
 
-PayrollRouter.get('/:id',  PayrollController.show);
-PayrollRouter.post('/',    rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER), PayrollController.create);
-PayrollRouter.patch('/:id',rbac(Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER), PayrollController.update);
-PayrollRouter.delete('/:id',rbac(Role.SUPER_ADMIN, Role.HR_ADMIN), PayrollController.remove);
+payrollRouter.get(
+  '/', 
+  rbac(['READ:PAYROLL', 'MANAGE:ALL']), 
+  validate(payrollQuerySchema, 'query'), 
+  PayrollController.list
+);
+
+payrollRouter.get(
+  '/:id', 
+  rbac(['READ:PAYROLL', 'MANAGE:ALL']), 
+  PayrollController.show
+);
+
+payrollRouter.patch(
+  '/:id/approve', 
+  rbac(['APPROVE:PAYROLL', 'MANAGE:ALL']), 
+  PayrollController.approve
+);
+
+payrollRouter.get(
+  '/item/:itemId/pdf', 
+  rbac(['READ:PAYROLL', 'SELF:PAYROLL', 'MANAGE:ALL']), 
+  PayrollController.downloadPDF
+);
+
+payrollRouter.get(
+  '/:id/excel', 
+  rbac(['READ:PAYROLL', 'MANAGE:ALL']), 
+  PayrollController.exportExcel
+);
+
+payrollRouter.get(
+  '/:id/summary', 
+  rbac(['READ:PAYROLL', 'MANAGE:ALL']), 
+  PayrollController.getSummary
+);
+
+
+

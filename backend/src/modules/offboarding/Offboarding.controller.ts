@@ -1,31 +1,48 @@
-﻿import { Request, Response } from 'express';
-import { asyncHandler } from '../../common/utils/asyncHandler';
-import { sendOk, sendCreated, sendNoContent } from '../../common/utils/response';
-import { OffboardingService } from './Offboarding.service';
+import { Request, Response } from 'express';
+import { offboardingService } from './Offboarding.service';
+import { sendOk, sendCreated } from '../../common/utils/response';
 
 export class OffboardingController {
-  static list = asyncHandler(async (req: Request, res: Response) => {
-    const result = await OffboardingService.findAll(req.query as never);
-    res.json({ success: true, ...result });
-  });
+  
+  // ─── Templates ────────────────────────────────────────────────────────────
+  
+  async listTemplates(_req: Request, res: Response) {
+    const templates = await offboardingService.findAllTemplates();
+    return sendOk(res, templates);
+  }
 
-  static show = asyncHandler(async (req: Request, res: Response) => {
-    const item = await OffboardingService.findById(req.params.id);
-    sendOk(res, item);
-  });
+  async getTemplate(req: Request, res: Response) {
+    const template = await offboardingService.findTemplateById(req.params.id);
+    return sendOk(res, template);
+  }
 
-  static create = asyncHandler(async (req: Request, res: Response) => {
-    const item = await OffboardingService.create(req.body);
-    sendCreated(res, item);
-  });
+  async createTemplate(req: Request, res: Response) {
+    const template = await offboardingService.createTemplate(req.body);
+    return sendCreated(res, template);
+  }
 
-  static update = asyncHandler(async (req: Request, res: Response) => {
-    const item = await OffboardingService.update(req.params.id, req.body);
-    sendOk(res, item);
-  });
+  // ─── Offboarding Instances ─────────────────────────────────────────────────
 
-  static remove = asyncHandler(async (req: Request, res: Response) => {
-    await OffboardingService.remove(req.params.id);
-    sendNoContent(res);
-  });
+  async list(req: Request, res: Response) {
+    const result = await offboardingService.findAll(req.query as any);
+    return sendOk(res, result);
+  }
+
+  async getById(req: Request, res: Response) {
+    const offboarding = await offboardingService.findById(req.params.id);
+    return sendOk(res, offboarding);
+  }
+
+  async initiate(req: Request, res: Response) {
+    const result = await offboardingService.initiate(req.body);
+    return sendCreated(res, result);
+  }
+
+  async updateTask(req: Request, res: Response) {
+    const actorId = (req as any).user?.id;
+    const task = await offboardingService.updateTaskStatus(req.params.taskId, req.body, actorId);
+    return sendOk(res, task);
+  }
 }
+
+export const offboardingController = new OffboardingController();

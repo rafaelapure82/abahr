@@ -5,22 +5,43 @@ import { EmploymentType, EmploymentStatus, Gender, MaritalStatus, PayrollFrequen
 export const employeeQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
-  search: z.string().optional(),
+  search: z.string().optional(), // general search
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  employeeCode: z.string().optional(),
+  document: z.string().optional(), // Search by Tax ID or National ID
   departmentId: z.string().uuid().optional(),
   status: z.nativeEnum(EmploymentStatus).optional(),
   type: z.nativeEnum(EmploymentType).optional(),
   managerId: z.string().uuid().optional(),
-  sortBy: z.enum(['firstName','lastName','hireDate','jobTitle','createdAt']).default('firstName'),
-  sortOrder: z.enum(['asc','desc']).default('asc'),
+  sortBy: z.enum(['firstName', 'lastName', 'hireDate', 'jobTitle', 'createdAt']).default('firstName'),
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 export type EmployeeQuery = z.infer<typeof employeeQuerySchema>;
+
+// ── Emergency Contact ──────────────────────────────────────────────────────────
+export const emergencyContactSchema = z.object({
+  emergencyName: z.string().min(2),
+  emergencyPhone: z.string().min(5),
+  emergencyRelation: z.string().min(2),
+});
+export type EmergencyContactDto = z.infer<typeof emergencyContactSchema>;
+
+// ── Bank Information ────────────────────────────────────────────────────────────
+export const bankInfoSchema = z.object({
+  bankName: z.string().min(2),
+  bankAccountNumber: z.string().min(5),
+  bankRoutingNumber: z.string().optional(),
+  taxId: z.string().optional(),
+});
+export type BankInfoDto = z.infer<typeof bankInfoSchema>;
 
 // ── Create Employee ───────────────────────────────────────────────────────────
 export const createEmployeeSchema = z.object({
   // Auth
   email: z.string().email(),
   password: z.string().min(8).regex(/[A-Z]/).regex(/[a-z]/).regex(/[0-9]/),
-  role: z.enum(['HR_ADMIN','HR_MANAGER','DEPARTMENT_MANAGER','PAYROLL_ADMIN','RECRUITER','EMPLOYEE','VIEWER']).default('EMPLOYEE'),
+  roleIds: z.array(z.string().uuid()).optional(), // Updated for Dynamic RBAC
 
   // Personal
   firstName: z.string().min(1).max(100),
@@ -42,10 +63,8 @@ export const createEmployeeSchema = z.object({
   postalCode: z.string().optional(),
   country: z.string().optional(),
 
-  // Emergency
-  emergencyName: z.string().optional(),
-  emergencyPhone: z.string().optional(),
-  emergencyRelation: z.string().optional(),
+  // Emergency (Optional at creation)
+  ...emergencyContactSchema.partial().shape,
 
   // Employment
   jobTitle: z.string().min(1).max(150),
@@ -61,8 +80,7 @@ export const createEmployeeSchema = z.object({
   baseSalary: z.coerce.number().min(0).default(0),
   currency: z.string().length(3).default('USD'),
   salaryFrequency: z.nativeEnum(PayrollFrequency).default(PayrollFrequency.MONTHLY),
-  bankName: z.string().optional(),
-  bankAccountNumber: z.string().optional(),
+  ...bankInfoSchema.partial().shape,
 
   // Settings
   isRemote: z.boolean().default(false),
@@ -72,7 +90,7 @@ export type CreateEmployeeDto = z.infer<typeof createEmployeeSchema>;
 
 // ── Update Employee ───────────────────────────────────────────────────────────
 export const updateEmployeeSchema = createEmployeeSchema
-  .omit({ email: true, password: true, role: true })
+  .omit({ email: true, password: true, roleIds: true })
   .partial();
 export type UpdateEmployeeDto = z.infer<typeof updateEmployeeSchema>;
 

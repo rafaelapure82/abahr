@@ -1,31 +1,48 @@
-﻿import { Request, Response } from 'express';
-import { asyncHandler } from '../../common/utils/asyncHandler';
-import { sendOk, sendCreated, sendNoContent } from '../../common/utils/response';
-import { OnboardingService } from './Onboarding.service';
+import { Request, Response } from 'express';
+import { onboardingService } from './Onboarding.service';
+import { sendOk, sendCreated } from '../../common/utils/response';
 
 export class OnboardingController {
-  static list = asyncHandler(async (req: Request, res: Response) => {
-    const result = await OnboardingService.findAll(req.query as never);
-    res.json({ success: true, ...result });
-  });
+  
+  // ─── Templates ────────────────────────────────────────────────────────────
+  
+  async listTemplates(_req: Request, res: Response) {
+    const templates = await onboardingService.findAllTemplates();
+    return sendOk(res, templates);
+  }
 
-  static show = asyncHandler(async (req: Request, res: Response) => {
-    const item = await OnboardingService.findById(req.params.id);
-    sendOk(res, item);
-  });
+  async getTemplate(req: Request, res: Response) {
+    const template = await onboardingService.findTemplateById(req.params.id);
+    return sendOk(res, template);
+  }
 
-  static create = asyncHandler(async (req: Request, res: Response) => {
-    const item = await OnboardingService.create(req.body);
-    sendCreated(res, item);
-  });
+  async createTemplate(req: Request, res: Response) {
+    const template = await onboardingService.createTemplate(req.body);
+    return sendCreated(res, template);
+  }
 
-  static update = asyncHandler(async (req: Request, res: Response) => {
-    const item = await OnboardingService.update(req.params.id, req.body);
-    sendOk(res, item);
-  });
+  // ─── Onboarding Instances ──────────────────────────────────────────────────
 
-  static remove = asyncHandler(async (req: Request, res: Response) => {
-    await OnboardingService.remove(req.params.id);
-    sendNoContent(res);
-  });
+  async list(req: Request, res: Response) {
+    const result = await onboardingService.findAll(req.query as any);
+    return sendOk(res, result);
+  }
+
+  async getById(req: Request, res: Response) {
+    const onboarding = await onboardingService.findById(req.params.id);
+    return sendOk(res, onboarding);
+  }
+
+  async initiate(req: Request, res: Response) {
+    const result = await onboardingService.initiate(req.body);
+    return sendCreated(res, result);
+  }
+
+  async updateTask(req: Request, res: Response) {
+    const actorId = (req as any).user?.id;
+    const task = await onboardingService.updateTaskStatus(req.params.taskId, req.body, actorId);
+    return sendOk(res, task);
+  }
 }
+
+export const onboardingController = new OnboardingController();
