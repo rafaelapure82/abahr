@@ -26,8 +26,8 @@ export const manualAttendanceSchema = z.object({
 });
 
 export const attendanceQuerySchema = z.object({
-  page: z.string().optional().transform(Number),
-  limit: z.string().optional().transform(Number),
+  page: z.coerce.number().optional(),
+  limit: z.coerce.number().optional(),
   employeeId: z.string().uuid().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),

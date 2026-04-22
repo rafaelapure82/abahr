@@ -8,7 +8,7 @@ import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
     selector: 'app-onboarding-dashboard',
-    imports: [CommonModule, RouterLink, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    imports: [CommonModule, RouterLink, CardComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
     template: `
     <div class="space-y-6">
       <!-- Header -->

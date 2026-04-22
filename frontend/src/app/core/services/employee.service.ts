@@ -1,6 +1,7 @@
 import { Injectable, inject, resource } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface Employee {
@@ -190,19 +191,34 @@ export class EmployeeService {
         params = params.set(key, String(value));
       }
     });
-    return this.http.get<PaginatedResponse<Employee>>(this.apiUrl, { params });
+    return this.http.get<PaginatedResponse<any>>(this.apiUrl, { params }).pipe(
+      map((res: PaginatedResponse<any>) => ({
+        ...res,
+        data: res.data.map((emp: any) => ({
+          ...emp,
+          status: emp.status || emp.employmentStatus
+        }))
+      }))
+    );
   }
 
   getEmployeeById(id: string): Observable<{ data: Employee }> {
-    return this.http.get<{ data: Employee }>(`${this.apiUrl}/${id}`);
+    return this.http.get<{ data: any }>(`${this.apiUrl}/${id}`).pipe(
+      map((res: { data: any }) => ({
+        data: {
+          ...res.data,
+          status: res.data.status || res.data.employmentStatus
+        }
+      }))
+    );
   }
 
-  getEmployeeResource(id: string | null) {
-    return resource({
-      request: () => ({ id }),
-      loader: ({ request }) => {
-        if (!request.id) return Promise.resolve({ data: null });
-        return firstValueFrom(this.getEmployeeById(request.id));
+  getEmployeeResource(id: () => string | null) {
+    return resource<{ data: Employee | null }, unknown>({
+      loader: () => {
+        const employeeId = id();
+        if (!employeeId) return Promise.resolve({ data: null });
+        return firstValueFrom(this.getEmployeeById(employeeId));
       }
     });
   }
@@ -240,7 +256,7 @@ export class EmployeeService {
   }
 
   getDepartmentsResource() {
-    return resource({
+    return resource<{ data: any[] }, unknown>({
       loader: () => firstValueFrom(this.getDepartments())
     });
   }
@@ -252,10 +268,9 @@ export class EmployeeService {
     return this.http.get<{ data: Employee[] }>(`${this.apiUrl}`, { params });
   }
 
-  getManagersResource(excludeId?: string) {
-    return resource({
-      request: () => ({ excludeId }),
-      loader: ({ request }) => firstValueFrom(this.getManagers(request.excludeId))
+  getManagersResource(excludeId: () => string | undefined) {
+    return resource<{ data: Employee[] }, unknown>({
+      loader: () => firstValueFrom(this.getManagers(excludeId()))
     });
   }
 

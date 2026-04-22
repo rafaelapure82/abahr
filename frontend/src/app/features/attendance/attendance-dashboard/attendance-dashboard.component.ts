@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, OnInit, OnDestroy, ChangeDetectorRef, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AttendanceService } from '../../../core/services/attendance.service';
 import { CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent } from '../../../shared/components/card/card.component';
@@ -7,7 +7,7 @@ import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
     selector: 'app-attendance-dashboard',
-    imports: [CommonModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    imports: [CommonModule, CardComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
     template: `
     <div class="space-y-6">
       <!-- Header -->
@@ -17,7 +17,7 @@ import { LucideAngularModule } from 'lucide-angular';
           <p class="text-muted-foreground">Track your working hours and team attendance.</p>
         </div>
         <div class="text-right text-sm text-muted-foreground">
-          <p class="font-semibold text-lg text-foreground">{{ currentTime }}</p>
+          <p class="font-semibold text-lg text-foreground">{{ currentTime() }}</p>
           <p>{{ today | date:'EEEE, MMMM d, y' }}</p>
         </div>
       </div>
@@ -30,36 +30,36 @@ import { LucideAngularModule } from 'lucide-angular';
             <div class="relative">
               <div class="w-40 h-40 rounded-full border-4 flex items-center justify-center transition-all duration-500"
                    [ngClass]="{
-                     'border-green-500 bg-green-500/10': isCheckedIn && !isCheckedOut,
-                     'border-blue-500 bg-blue-500/10': isCheckedOut,
-                     'border-border bg-muted': !isCheckedIn
+                     'border-green-500 bg-green-500/10': isCheckedIn() && !isCheckedOut(),
+                     'border-blue-500 bg-blue-500/10': isCheckedOut(),
+                     'border-border bg-muted': !isCheckedIn()
                    }">
                 <div class="text-center">
                   <lucide-icon
-                    [name]="isCheckedIn && !isCheckedOut ? 'check-circle-2' : isCheckedOut ? 'moon' : 'clock'"
+                    [name]="isCheckedIn() && !isCheckedOut() ? 'check-circle-2' : isCheckedOut() ? 'moon' : 'clock'"
                     size="40"
                     [ngClass]="{
-                      'text-green-500': isCheckedIn && !isCheckedOut,
-                      'text-blue-500': isCheckedOut,
-                      'text-muted-foreground': !isCheckedIn
+                      'text-green-500': isCheckedIn() && !isCheckedOut(),
+                      'text-blue-500': isCheckedOut(),
+                      'text-muted-foreground': !isCheckedIn()
                     }">
                   </lucide-icon>
                   <p class="text-xs font-semibold mt-1"
                      [ngClass]="{
-                       'text-green-600': isCheckedIn && !isCheckedOut,
-                       'text-blue-600': isCheckedOut,
-                       'text-muted-foreground': !isCheckedIn
+                       'text-green-600': isCheckedIn() && !isCheckedOut(),
+                       'text-blue-600': isCheckedOut(),
+                       'text-muted-foreground': !isCheckedIn()
                      }">
-                    {{ statusLabel }}
+                    {{ statusLabel() }}
                   </p>
                 </div>
               </div>
             </div>
     
             <!-- Timer -->
-            @if (isCheckedIn && !isCheckedOut) {
+            @if (isCheckedIn() && !isCheckedOut()) {
               <div class="text-center">
-                <p class="text-4xl font-mono font-bold tracking-widest text-green-600">{{ elapsedTime }}</p>
+                <p class="text-4xl font-mono font-bold tracking-widest text-green-600">{{ elapsedTime() }}</p>
                 <p class="text-xs text-muted-foreground mt-1">Time worked today</p>
               </div>
             }
@@ -68,24 +68,24 @@ import { LucideAngularModule } from 'lucide-angular';
             <div class="flex gap-8 text-center">
               <div>
                 <p class="text-xs text-muted-foreground uppercase tracking-wider">Check In</p>
-                <p class="font-semibold text-sm mt-1">{{ todayRecord?.checkIn | date:'hh:mm a' || '—' }}</p>
+                <p class="font-semibold text-sm mt-1">{{ (todayRecord()?.checkIn | date:'hh:mm a') || '—' }}</p>
               </div>
               <div class="w-px bg-border"></div>
               <div>
                 <p class="text-xs text-muted-foreground uppercase tracking-wider">Check Out</p>
-                <p class="font-semibold text-sm mt-1">{{ todayRecord?.checkOut | date:'hh:mm a' || '—' }}</p>
+                <p class="font-semibold text-sm mt-1">{{ (todayRecord()?.checkOut | date:'hh:mm a') || '—' }}</p>
               </div>
               <div class="w-px bg-border"></div>
               <div>
                 <p class="text-xs text-muted-foreground uppercase tracking-wider">Hours</p>
-                <p class="font-semibold text-sm mt-1">{{ todayRecord?.hoursWorked || '0.00' }}h</p>
+                <p class="font-semibold text-sm mt-1">{{ todayRecord()?.hoursWorked || '0.00' }}h</p>
               </div>
             </div>
     
             <!-- Action Buttons -->
-            @if (!loadingAction) {
+            @if (!loadingAction()) {
               <div class="flex gap-4">
-                @if (!isCheckedIn) {
+                @if (!isCheckedIn()) {
                   <app-button
                     variant="primary"
                     (click)="doCheckIn()"
@@ -94,7 +94,7 @@ import { LucideAngularModule } from 'lucide-angular';
                     Check In
                   </app-button>
                 }
-                @if (isCheckedIn && !isCheckedOut) {
+                @if (isCheckedIn() && !isCheckedOut()) {
                   <app-button
                     variant="destructive"
                     (click)="doCheckOut()"
@@ -105,7 +105,7 @@ import { LucideAngularModule } from 'lucide-angular';
                 }
               </div>
             }
-            @if (loadingAction) {
+            @if (loadingAction()) {
               <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             }
           </div>
@@ -114,7 +114,7 @@ import { LucideAngularModule } from 'lucide-angular';
     
       <!-- Stats -->
       <div class="grid gap-4 md:grid-cols-4">
-        @for (stat of stats; track stat) {
+        @for (stat of stats(); track stat) {
           <app-card>
             <app-card-content class="flex items-center gap-4 p-6">
               <div class="w-10 h-10 rounded-xl flex items-center justify-center" [ngClass]="stat.bg">
@@ -137,36 +137,35 @@ export class AttendanceDashboardComponent implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
 
   today = new Date();
-  todayRecord: any = null;
-  loadingAction = false;
-  currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  elapsedTime = '00:00:00';
+  todayRecord = signal<any>(null);
+  loadingAction = signal(false);
+  currentTime = signal(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+  elapsedTime = signal('00:00:00');
 
   private clockInterval: any;
 
-  stats: any[] = [
+  stats = signal<any[]>([
     { label: 'Present This Month', value: '—', icon: 'check-circle', color: 'text-green-500', bg: 'bg-green-500/10' },
     { label: 'Absent', value: '—', icon: 'x-circle', color: 'text-red-500', bg: 'bg-red-500/10' },
     { label: 'Remote Days', value: '—', icon: 'wifi', color: 'text-blue-500', bg: 'bg-blue-500/10' },
     { label: 'Overtime Hours', value: '—', icon: 'timer', color: 'text-amber-500', bg: 'bg-amber-500/10' },
-  ];
+  ]);
 
-  get isCheckedIn() { return !!this.todayRecord?.checkIn; }
-  get isCheckedOut() { return !!this.todayRecord?.checkOut; }
+  isCheckedIn = computed(() => !!this.todayRecord()?.checkIn);
+  isCheckedOut = computed(() => !!this.todayRecord()?.checkOut);
 
-  get statusLabel() {
-    if (this.isCheckedOut) return 'CHECKED OUT';
-    if (this.isCheckedIn) return 'WORKING';
+  statusLabel = computed(() => {
+    if (this.isCheckedOut()) return 'CHECKED OUT';
+    if (this.isCheckedIn()) return 'WORKING';
     return 'NOT STARTED';
-  }
+  });
 
   ngOnInit() {
     this.loadToday();
     this.loadStats();
     this.clockInterval = setInterval(() => {
-      this.currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      this.currentTime.set(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       this.updateElapsed();
-      this.cdr.markForCheck();
     }, 1000);
   }
 
@@ -175,20 +174,19 @@ export class AttendanceDashboardComponent implements OnInit, OnDestroy {
   }
 
   private updateElapsed() {
-    const record = this.todayRecord;
+    const record = this.todayRecord();
     if (!record?.checkIn || record?.checkOut) return;
     const diff = Date.now() - new Date(record.checkIn).getTime();
     const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
     const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
     const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-    this.elapsedTime = `${h}:${m}:${s}`;
+    this.elapsedTime.set(`${h}:${m}:${s}`);
   }
 
   loadToday() {
     this.attendanceService.getMyToday().subscribe({
       next: (res: any) => {
-        this.todayRecord = res.data || null;
-        this.cdr.markForCheck();
+        this.todayRecord.set(res.data || null);
       },
       error: () => {}
     });
@@ -198,43 +196,38 @@ export class AttendanceDashboardComponent implements OnInit, OnDestroy {
     this.attendanceService.getStats().subscribe({
       next: (res: any) => {
         const d = res.data || {};
-        this.stats = [
+        this.stats.set([
           { label: 'Present This Month', value: d.present ?? '—', icon: 'check-circle', color: 'text-green-500', bg: 'bg-green-500/10' },
           { label: 'Absent', value: d.absent ?? '—', icon: 'x-circle', color: 'text-red-500', bg: 'bg-red-500/10' },
           { label: 'Remote Days', value: d.remote ?? '—', icon: 'wifi', color: 'text-blue-500', bg: 'bg-blue-500/10' },
           { label: 'Overtime Hours', value: d.totalOvertime ? `${d.totalOvertime}h` : '—', icon: 'timer', color: 'text-amber-500', bg: 'bg-amber-500/10' },
-        ];
-        this.cdr.markForCheck();
+        ]);
       }
     });
   }
 
   doCheckIn() {
-    this.loadingAction = true;
+    this.loadingAction.set(true);
     this.attendanceService.checkIn({ isRemote: false }).subscribe({
       next: (res: any) => {
-        this.todayRecord = res.data || null;
-        this.loadingAction = false;
-        this.cdr.markForCheck();
+        this.todayRecord.set(res.data || null);
+        this.loadingAction.set(false);
       },
       error: () => {
-        this.loadingAction = false;
-        this.cdr.markForCheck();
+        this.loadingAction.set(false);
       }
     });
   }
 
   doCheckOut() {
-    this.loadingAction = true;
+    this.loadingAction.set(true);
     this.attendanceService.checkOut().subscribe({
       next: (res: any) => {
-        this.todayRecord = res.data || null;
-        this.loadingAction = false;
-        this.cdr.markForCheck();
+        this.todayRecord.set(res.data || null);
+        this.loadingAction.set(false);
       },
       error: () => {
-        this.loadingAction = false;
-        this.cdr.markForCheck();
+        this.loadingAction.set(false);
       }
     });
   }

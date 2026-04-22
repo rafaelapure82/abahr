@@ -52,7 +52,8 @@ export const ApplyJobSchema = z.object({
 export type ApplyJobDto = z.infer<typeof ApplyJobSchema>;
 
 export const MoveStageSchema = z.object({
-  status: z.nativeEnum(ApplicationStatus),
+  status: z.nativeEnum(ApplicationStatus).optional(),
+  currentStageId: z.string().uuid().optional(),
   notes: z.string().optional(),
 });
 

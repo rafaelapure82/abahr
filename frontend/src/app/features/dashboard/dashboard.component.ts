@@ -13,11 +13,6 @@ import { LucideAngularModule } from 'lucide-angular';
         CommonModule,
         RouterLink,
         FormsModule,
-        CardComponent,
-        CardHeaderComponent,
-        CardTitleComponent,
-        CardContentComponent,
-        ButtonComponent,
         LucideAngularModule
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -316,7 +311,10 @@ export class DashboardComponent implements OnInit {
   selectedPeriod = signal('week');
 
   dashboardResource = this.dashboardService.getDashboardResource(this.selectedPeriod);
-  data = computed(() => this.dashboardResource.value()?.data || null);
+  data = computed(() => {
+    const res = this.dashboardResource.value();
+    return res && 'data' in res ? res.data : null;
+  });
   loading = computed(() => this.dashboardResource.isLoading());
 
   // Gradient backgrounds for KPI cards
@@ -375,7 +373,7 @@ export class DashboardComponent implements OnInit {
   getBarWidth(count: number): number {
     const d = this.data();
     if (!d?.headcountByDepartment.length) return 0;
-    const max = Math.max(...d.headcountByDepartment.map(d => d.count));
+    const max = Math.max(...d.headcountByDepartment.map(dept => dept.count));
     return max > 0 ? (count / max) * 100 : 0;
   }
 

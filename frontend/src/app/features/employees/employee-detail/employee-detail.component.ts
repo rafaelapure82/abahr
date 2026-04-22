@@ -11,13 +11,7 @@ import { LucideAngularModule, Mail, Phone, MapPin, Briefcase, Calendar, ChevronL
     selector: 'app-employee-detail',
     imports: [
         CommonModule,
-        RouterLink,
         FormsModule,
-        CardComponent,
-        CardHeaderComponent,
-        CardTitleComponent,
-        CardContentComponent,
-        ButtonComponent,
         LucideAngularModule
     ],
     template: `

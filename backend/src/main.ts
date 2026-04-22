@@ -3,6 +3,7 @@ import { env } from './config/env';
 import { logger } from './config/logger';
 import { prisma } from './config/prisma';
 import { createApp } from './index';
+import { initWorkers } from './workers';
 
 // ═══════════════════════════════════════════════════════════════════
 //  BOOTSTRAP – connects DB then starts HTTP server
@@ -12,6 +13,9 @@ async function bootstrap(): Promise<void> {
     // ── Validate DB connection ──────────────────────────────────────
     await prisma.$connect();
     logger.info('✅ Database connected');
+
+    // ── Start Workers ─────────────────────────────────────────────
+    initWorkers();
 
     // ── Create app ─────────────────────────────────────────────────
     const { httpServer } = createApp();

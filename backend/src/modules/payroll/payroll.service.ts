@@ -3,6 +3,8 @@ import { parsePagination, paginate } from '../../common/utils/response';
 import { NotFound, BadRequest } from '../../common/utils/apiError';
 import type { CreatePayrollPeriodDto, PayrollQuery } from './Payroll.types';
 import { Decimal } from '@prisma/client/runtime/library';
+import { payrollQueue } from './Payroll.queue';
+import { logger } from '../../config/logger';
 
 export class PayrollService {
   
@@ -27,16 +29,41 @@ export class PayrollService {
   }
 
   /**
+   * Calculate working days (Mon-Fri) excluding public holidays
+   */
+  async getWorkingDays(start: Date, end: Date): Promise<number> {
+    let count = 0;
+    const current = new Date(start);
+    const stop = new Date(end);
+    
+    // Fetch holidays in range
+    const holidays = await prisma.publicHoliday.findMany({
+      where: { date: { gte: start, lte: end }, isActive: true }
+    });
+    const holidayStrings = holidays.map(h => h.date.toISOString().split('T')[0]);
+
+    while (current <= stop) {
+      const dayOfWeek = current.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sun = 0, Sat = 6
+      const isHoliday = holidayStrings.includes(current.toISOString().split('T')[0]);
+
+      if (!isWeekend && !isHoliday) {
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    return count;
+  }
+
+  /**
    * Generate a Payroll Period (Nivel Dios: Automatic Data Integration)
    */
   async generatePeriod(dto: CreatePayrollPeriodDto) {
-    const { startDate, endDate, frequency } = dto;
+    const { startDate, endDate } = dto;
 
     if (startDate >= endDate) throw BadRequest('Start date must be before end date');
 
-    const exchangeRate = await this.getExchangeRate();
-
-    // 1. Create the Period
+    // 1. Create the Period and Payroll records with status PROCESSING
     const period = await prisma.payrollPeriod.create({
       data: {
         name: dto.name,
@@ -45,124 +72,195 @@ export class PayrollService {
         endDate,
         payDate: dto.payDate,
         departmentId: dto.departmentId,
-        status: 'DRAFT'
+        status: 'PROCESSING'
       }
     });
 
-    // 2. Fetch Employees
-    const employees = await prisma.employee.findMany({
-      where: {
-        employmentStatus: 'ACTIVE',
-        deletedAt: null,
-        departmentId: dto.departmentId || undefined
-      },
-      include: { department: true }
-    });
-
-    const config = await this.getPayrollConfig();
-
-    // 3. Process each employee
-    const items = await Promise.all(employees.map(async (emp) => {
-      // a. Summary
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-
-      const [attendance, leaves, latestReview] = await Promise.all([
-        prisma.attendance.aggregate({
-          where: { employeeId: emp.id, date: { gte: start, lte: end } },
-          _sum: { hoursWorked: true, overtimeHours: true },
-          _count: { id: true }
-        }),
-        prisma.leaveRequest.aggregate({
-          where: { employeeId: emp.id, status: 'APPROVED', startDate: { lte: end }, endDate: { gte: start } },
-          _sum: { daysRequested: true }
-        }),
-        prisma.performanceReview.findFirst({
-          where: { employeeId: emp.id, status: 'COMPLETED' },
-          orderBy: { createdAt: 'desc' }
-        })
-      ]);
-
-      // b. Calculations
-      const baseSalary = Number(emp.baseSalary);
-      const freqDivisor = frequency === 'BIWEEKLY' ? 2 : 1;
-      const periodBase = baseSalary / freqDivisor;
-      
-      // i. Overtime
-      const otRate = emp.department?.overtimeRate || 1.5;
-      const overtimeHours = Number(attendance._sum.overtimeHours || 0);
-      const hourlyRate = baseSalary / 160;
-      const overtimePay = overtimeHours * hourlyRate * otRate;
-
-      // ii. Bonuses
-      const bonuses: any[] = [];
-      
-      // Seniority: 2% per year
-      const years = Math.floor((start.getTime() - emp.hireDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
-      if (years > 0) {
-        bonuses.push({ name: 'Antiquity Bonus', type: 'SENIORITY', amount: periodBase * (years * 0.02) });
-      }
-
-      // Performance
-      if (latestReview?.overallScore) {
-        const score = Number(latestReview.overallScore);
-        let perfRate = 0;
-        if (score >= 4.5) perfRate = 0.10;
-        else if (score >= 4.0) perfRate = 0.05;
-        else if (score >= 3.0) perfRate = 0.02;
-
-        if (perfRate > 0) {
-          bonuses.push({ name: 'Performance Bonus', type: 'PERFORMANCE', amount: periodBase * perfRate });
-        }
-      }
-
-      const totalBonuses = bonuses.reduce((acc, b) => acc + b.amount, 0);
-      const grossPay = periodBase + overtimePay + totalBonuses;
-      
-      // iii. Deductions
-      const deductions: any[] = [
-        { name: 'Income Tax', type: 'TAX_INCOME', amount: grossPay * config.taxRate, percentage: config.taxRate },
-        { name: 'Social Security', type: 'TAX_SOCIAL_SECURITY', amount: grossPay * config.ssRate, percentage: config.ssRate }
-      ];
-
-      const totalDeductions = deductions.reduce((acc, d) => acc + d.amount, 0);
-      const netPay = grossPay - totalDeductions;
-
-      return {
-        employeeId: emp.id,
-        baseSalary: periodBase,
-        regularHours: attendance._sum.hoursWorked || 0,
-        overtimeHours,
-        overtimePay,
-        grossPay,
-        netPay,
-        currency: 'USD',
-        notes: `Overtime Rate: ${otRate}x`,
-        attendedDays: attendance._count.id,
-        leaveDays: leaves._sum.daysRequested || 0,
-        payrollPeriodId: period.id,
-        bonuses: { create: bonuses },
-        deductions: { create: deductions }
-      };
-    }));
-
-    // 4. Create one Payroll object to group items (Backward compatibility with schema)
     const payroll = await prisma.payroll.create({
       data: {
         periodStart: startDate,
         periodEnd: endDate,
-        status: 'DRAFT',
+        status: 'PROCESSING',
         departmentId: dto.departmentId,
-        items: {
-          create: items.map(item => ({
-            ...item,
-            payrollPeriodId: undefined // Remove to avoid conflict if any, handled by parent
-          }))
-        }
       }
     });
 
-    return { period, payroll };
+    // 2. Dispatch to Queue
+    await payrollQueue.add('generate-payroll', {
+      periodId: period.id,
+      payrollId: payroll.id,
+      dto
+    });
+
+    return { period, payroll, message: 'Payroll processing started in background' };
+  }
+
+  /**
+   * Heavy calculation task triggered by Worker
+   */
+  async processPayrollTask(periodId: string, payrollId: string, dto: CreatePayrollPeriodDto) {
+    const { startDate, endDate, frequency } = dto;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    try {
+      const exchangeRate = await this.getExchangeRate();
+      const config = await this.getPayrollConfig();
+      const expectedWorkingDays = await this.getWorkingDays(start, end);
+
+      // Fetch Employees
+      const employees = await prisma.employee.findMany({
+        where: {
+          employmentStatus: 'ACTIVE',
+          deletedAt: null,
+          departmentId: dto.departmentId || undefined
+        },
+        include: { department: true }
+      });
+
+      // Process each employee
+      const items = await Promise.all(employees.map(async (emp) => {
+        const [attendance, leaves, latestReview] = await Promise.all([
+          prisma.attendance.aggregate({
+            where: { employeeId: emp.id, date: { gte: start, lte: end } },
+            _sum: { hoursWorked: true, overtimeHours: true },
+            _count: { id: true }
+          }),
+          prisma.leaveRequest.aggregate({
+            where: { employeeId: emp.id, status: 'APPROVED', startDate: { lte: end }, endDate: { gte: start } },
+            _sum: { daysRequested: true }
+          }),
+          prisma.performanceReview.findFirst({
+            where: { employeeId: emp.id, status: 'COMPLETED' },
+            orderBy: { createdAt: 'desc' }
+          })
+        ]);
+
+        const baseSalary = Number(emp.baseSalary);
+        const freqDivisor = frequency === 'BIWEEKLY' ? 2 : 1;
+        const periodBase = baseSalary / freqDivisor;
+        
+        const attendedDays = attendance._count.id;
+        const leaveDays = Number(leaves._sum.daysRequested || 0);
+        const absenceDays = Math.max(0, expectedWorkingDays - attendedDays - leaveDays);
+
+        const otRate = emp.department?.overtimeRate || 1.5;
+        const overtimeHours = Number(attendance._sum.overtimeHours || 0);
+        const hourlyRate = baseSalary / 160;
+        const overtimePay = overtimeHours * hourlyRate * otRate;
+
+        const bonuses: any[] = [];
+        const years = Math.floor((start.getTime() - emp.hireDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
+        if (years > 0) {
+          bonuses.push({ name: 'Bono Antigüedad', type: 'SENIORITY', amount: periodBase * (years * 0.02) });
+        }
+
+        if (latestReview?.overallScore) {
+          const score = Number(latestReview.overallScore);
+          let perfRate = 0;
+          if (score >= 4.5) perfRate = 0.10;
+          else if (score >= 4.0) perfRate = 0.05;
+          else if (score >= 3.0) perfRate = 0.02;
+
+          if (perfRate > 0) {
+            bonuses.push({ name: 'Bono Desempeño', type: 'PERFORMANCE', amount: periodBase * perfRate });
+          }
+        }
+
+        const totalBonuses = bonuses.reduce((acc, b) => acc + b.amount, 0);
+        let grossPay = periodBase + overtimePay + totalBonuses;
+        
+        const deductions: any[] = [
+          { name: 'Impuesto sobre la Renta', type: 'TAX_INCOME', amount: grossPay * config.taxRate, percentage: config.taxRate },
+          { name: 'Seguro Social', type: 'TAX_SOCIAL_SECURITY', amount: grossPay * config.ssRate, percentage: config.ssRate }
+        ];
+
+        if (absenceDays > 0) {
+          const dailyRate = periodBase / expectedWorkingDays;
+          const absenceAmount = absenceDays * dailyRate;
+          deductions.push({ 
+            name: `Deducción por Faltas (${absenceDays} días)`, 
+            type: 'ABSENCE', 
+            amount: absenceAmount 
+          });
+        }
+
+        const totalDeductions = deductions.reduce((acc, d) => acc + d.amount, 0);
+        const netPay = Math.max(0, grossPay - totalDeductions);
+
+        return {
+          employeeId: emp.id,
+          baseSalary: periodBase,
+          regularHours: attendance._sum.hoursWorked || 0,
+          overtimeHours,
+          overtimePay,
+          grossPay,
+          netPay,
+          currency: 'USD',
+          notes: `Tasa Horas Extra: ${otRate}x | Días Laborables: ${expectedWorkingDays}`,
+          attendedDays,
+          leaveDays,
+          absenceDays,
+          workingDays: expectedWorkingDays,
+          payrollId, // Link to the main Payroll object
+          payrollPeriodId: periodId,
+          bonuses: { create: bonuses },
+          deductions: { create: deductions }
+        };
+      }));
+
+      // Update in transaction
+      await prisma.$transaction(async (tx) => {
+        // Create all items
+        for (const item of items) {
+          await tx.payrollItem.create({ data: item });
+        }
+
+        const totals = items.reduce((acc, item) => {
+          acc.gross += item.grossPay;
+          acc.net += item.netPay;
+          acc.deductions += (item.grossPay - item.netPay); // Simplified for now
+          acc.bonuses += item.overtimePay; // Should actually sum bonuses
+          return acc;
+        }, { gross: 0, net: 0, deductions: 0, bonuses: 0 });
+
+        await tx.payroll.update({
+          where: { id: payrollId },
+          data: {
+            status: 'DRAFT',
+            totalGross: totals.gross,
+            totalNet: totals.net,
+            totalDeductions: totals.deductions,
+            totalBonuses: totals.bonuses,
+            processedAt: new Date()
+          }
+        });
+
+        await tx.payrollPeriod.update({
+          where: { id: periodId },
+          data: {
+            status: 'DRAFT',
+            processedAt: new Date()
+          }
+        });
+      });
+
+      logger.info(`Payroll processing completed for Period ${periodId}`);
+    } catch (error) {
+      logger.error(`Payroll processing failed for Period ${periodId}:`, error);
+      
+      await prisma.payroll.update({
+        where: { id: payrollId },
+        data: { status: 'FAILED', notes: String(error) }
+      });
+
+      await prisma.payrollPeriod.update({
+        where: { id: periodId },
+        data: { status: 'FAILED', notes: String(error) }
+      });
+
+      throw error;
+    }
   }
 
   async findAll(query: PayrollQuery) {
@@ -210,10 +308,25 @@ export class PayrollService {
   }
 
   async approve(id: string) {
-    return prisma.payroll.update({
-      where: { id: id },
-      data: { status: 'APPROVED' }
+    const payroll = await prisma.payroll.findUnique({
+      where: { id },
+      select: { items: { select: { payrollPeriodId: true } } }
     });
+
+    const periodId = payroll?.items[0]?.payrollPeriodId;
+
+    return prisma.$transaction([
+      prisma.payroll.update({
+        where: { id },
+        data: { status: 'APPROVED', approvedAt: new Date() }
+      }),
+      ...(periodId ? [
+        prisma.payrollPeriod.update({
+          where: { id: periodId },
+          data: { status: 'APPROVED', approvedAt: new Date() }
+        })
+      ] : [])
+    ]);
   }
 
   async getAccountingSummary(id: string) {

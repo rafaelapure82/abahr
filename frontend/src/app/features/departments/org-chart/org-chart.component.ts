@@ -7,7 +7,7 @@ import { LucideAngularModule, Users, ChevronRight, ChevronDown } from 'lucide-an
 
 @Component({
     selector: 'app-org-chart',
-    imports: [CommonModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    imports: [CommonModule, CardComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
     template: `
     <div class="space-y-6">
       <!-- Header -->

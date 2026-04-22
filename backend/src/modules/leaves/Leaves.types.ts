@@ -24,8 +24,8 @@ export const leavePolicySchema = z.object({
 });
 
 export const leavesQuerySchema = z.object({
-  page: z.string().optional().transform(Number),
-  limit: z.string().optional().transform(Number),
+  page: z.coerce.number().optional(),
+  limit: z.coerce.number().optional(),
   employeeId: z.string().uuid().optional(),
   status: z.nativeEnum(LeaveStatus).optional(),
 });

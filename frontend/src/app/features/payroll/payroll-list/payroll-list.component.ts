@@ -1,14 +1,13 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, signal, computed, resource } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PayrollService } from '../../../core/services/payroll.service';
-import { CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent } from '../../../shared/components/card/card.component';
-import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { LucideAngularModule } from 'lucide-angular';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
     selector: 'app-payroll-list',
-    imports: [CommonModule, RouterLink, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    imports: [CommonModule, RouterLink, LucideAngularModule],
     template: `
     <div class="min-h-[80vh] bg-transparent text-slate-200 font-sans p-4 md:p-8 animate-fade-in relative">
       <!-- Background Glow -->
@@ -26,8 +25,8 @@ import { LucideAngularModule } from 'lucide-angular';
         </div>
     
         <div class="flex items-center gap-4">
-          <button (click)="load()" class="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-slate-400 hover:text-white" title="Refrescar">
-            <lucide-icon name="refresh-cw" size="20" [class.animate-spin]="loading"></lucide-icon>
+          <button (click)="payrollsResource.reload()" class="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-slate-400 hover:text-white" title="Refrescar">
+            <lucide-icon name="refresh-cw" size="20" [class.animate-spin]="loading()"></lucide-icon>
           </button>
           <button routerLink="/payroll/generate" class="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-xl shadow-indigo-600/30 transition-all flex items-center gap-3 active:scale-95">
             <lucide-icon name="plus" size="20"></lucide-icon>
@@ -38,7 +37,7 @@ import { LucideAngularModule } from 'lucide-angular';
     
       <!-- Status Hub (Nivel Dios Summary) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 relative z-10">
-        @for (s of summary; track s) {
+        @for (s of summary(); track s.label) {
           <div class="glass-card p-6 rounded-[32px] group hover:bg-white/5 transition-all cursor-default relative overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <div class="flex items-center justify-between relative z-10">
@@ -50,7 +49,6 @@ import { LucideAngularModule } from 'lucide-angular';
                 <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{{ s.label }}</p>
               </div>
             </div>
-            <!-- Decorative progress-like bar -->
             <div class="w-full h-1 bg-white/5 rounded-full mt-6 overflow-hidden">
               <div class="h-full rounded-full transition-all duration-1000" [ngClass]="s.bgClass" [style.width]="'40%'"></div>
             </div>
@@ -67,7 +65,7 @@ import { LucideAngularModule } from 'lucide-angular';
           </h3>
           <div class="flex items-center gap-2">
             <div class="px-4 py-2 rounded-xl bg-[#0f172a]/40 border border-white/10 text-xs font-bold text-slate-400">
-              Total Periodos: {{ payrolls.length }}
+              Total Periodos: {{ payrolls().length }}
             </div>
           </div>
         </div>
@@ -84,8 +82,7 @@ import { LucideAngularModule } from 'lucide-angular';
               </tr>
             </thead>
             <tbody>
-              <!-- Empty State -->
-              @if (!loading && payrolls.length === 0) {
+              @if (!loading() && payrolls().length === 0) {
                 <tr>
                   <td colspan="5" class="p-20 text-center">
                     <div class="space-y-4 opacity-30">
@@ -96,8 +93,7 @@ import { LucideAngularModule } from 'lucide-angular';
                 </tr>
               }
     
-              <!-- Data Rows -->
-              @for (p of payrolls; track p) {
+              @for (p of payrolls(); track p.id) {
                 <tr class="border-b border-white/5 last:border-0 group hover:bg-white/5 transition-all">
                   <td class="p-6">
                     <div class="flex flex-col">
@@ -123,7 +119,6 @@ import { LucideAngularModule } from 'lucide-angular';
                     </div>
                   </td>
                   <td class="p-6">
-                    <!-- Dynamic Status Badge -->
                     <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all"
                       [ngClass]="statusClass(p.status)">
                       <div class="w-2 h-2 rounded-full animate-pulse" [ngClass]="statusBullet(p.status)"></div>
@@ -143,9 +138,6 @@ import { LucideAngularModule } from 'lucide-angular';
                       <button (click)="exportExcel(p.id)" class="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-emerald-600/20 hover:border-emerald-600 transition-all text-white" title="Exportar Excel">
                         <lucide-icon name="file-spreadsheet" size="18"></lucide-icon>
                       </button>
-                      <button class="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-red-600/20 hover:border-red-600 transition-all text-red-400">
-                        <lucide-icon name="trash-2" size="18"></lucide-icon>
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -154,8 +146,7 @@ import { LucideAngularModule } from 'lucide-angular';
           </table>
         </div>
     
-        <!-- Loading Overlay -->
-        @if (loading) {
+        @if (loading()) {
           <div class="absolute inset-0 bg-[#0f172a]/60 backdrop-blur-sm z-20 flex items-center justify-center">
             <div class="flex flex-col items-center gap-4">
               <div class="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin shadow-[0_0_50px_rgba(79,70,229,0.3)]"></div>
@@ -181,62 +172,31 @@ import { LucideAngularModule } from 'lucide-angular';
     </style>
     `
 })
-export class PayrollListComponent implements OnInit {
-  private route = inject(ActivatedRoute);
+export class PayrollListComponent {
   private payrollService = inject(PayrollService);
-  private cdr = inject(ChangeDetectorRef);
 
-  payrolls: any[] = [];
-  loading = true;
+  payrollsResource = resource<any, void>({
+    loader: () => firstValueFrom(this.payrollService.list())
+  });
 
-  summary = [
-    { label: 'Procesando', value: '0', icon: 'refresh-cw', color: 'text-indigo-400', bg: 'bg-indigo-600/10', bgClass: 'bg-indigo-500' },
-    { label: 'Revision', value: '0', icon: 'clock', color: 'text-amber-400', bg: 'bg-amber-600/10', bgClass: 'bg-amber-500' },
-    { label: 'Listas', value: '0', icon: 'check-circle', color: 'text-blue-400', bg: 'bg-blue-600/10', bgClass: 'bg-blue-500' },
-    { label: 'Pagadas', value: '0', icon: 'dollar-sign', color: 'text-emerald-400', bg: 'bg-emerald-600/10', bgClass: 'bg-emerald-500' },
-  ];
+  payrolls = computed(() => this.payrollsResource.value()?.data || []);
+  loading = computed(() => this.payrollsResource.isLoading());
 
-  ngOnInit() { 
-    // Use pre-fetched data
-    const resolvedData = (this.route.snapshot.data as any)['payrolls'];
-    if (resolvedData) {
-      this.updateData(resolvedData.data || []);
-      this.loading = false;
-      this.cdr.detectChanges();
-    } else {
-      this.load(); 
-    }
-  }
-
-  load() {
-    this.loading = true;
-    this.cdr.detectChanges();
-    this.payrollService.list().subscribe({
-      next: (res: any) => {
-        this.updateData(res.data || []);
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  updateData(data: any[]) {
-    this.payrolls = data;
-    this.summary = [
+  summary = computed(() => {
+    const data = this.payrolls();
+    return [
       { label: 'Procesando', value: String(data.filter((p: any) => p.status === 'PROCESSING').length), icon: 'refresh-cw', color: 'text-indigo-400', bg: 'bg-indigo-600/10', bgClass: 'bg-indigo-500' },
       { label: 'Revisión', value: String(data.filter((p: any) => p.status === 'PENDING_APPROVAL' || p.status === 'DRAFT').length), icon: 'clock', color: 'text-amber-400', bg: 'bg-amber-600/10', bgClass: 'bg-amber-500' },
       { label: 'Listas', value: String(data.filter((p: any) => p.status === 'APPROVED').length), icon: 'check-circle', color: 'text-blue-400', bg: 'bg-blue-600/10', bgClass: 'bg-blue-500' },
       { label: 'Pagadas', value: String(data.filter((p: any) => p.status === 'PAID').length), icon: 'dollar-sign', color: 'text-emerald-400', bg: 'bg-emerald-600/10', bgClass: 'bg-emerald-500' },
     ];
-  }
+  });
 
   approve(id: string) {
     if (!confirm('¿Está seguro de aprobar este periodo de nómina?')) return;
-    this.payrollService.approve(id).subscribe({ next: () => this.load() });
+    this.payrollService.approve(id).subscribe({ 
+      next: () => this.payrollsResource.reload() 
+    });
   }
 
   exportExcel(id: string) {

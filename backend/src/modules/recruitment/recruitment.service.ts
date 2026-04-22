@@ -124,7 +124,8 @@ export class RecruitmentService {
     const updated = await prisma.jobApplication.update({
       where: { id: applicationId },
       data: { 
-        status: dto.status,
+        status: dto.status || application.status,
+        currentStageId: dto.currentStageId || application.currentStageId,
         internalNotes: dto.notes ? `${application.internalNotes || ''}\n[Update]: ${dto.notes}` : application.internalNotes
       }
     });

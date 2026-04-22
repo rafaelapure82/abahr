@@ -44,10 +44,10 @@ export const updateLocationSchema = createLocationSchema.partial();
 
 // ── Query Schemas ───────────────────────────────────────────────────────────────
 export const departmentsQuerySchema = z.object({
-  page: z.string().optional().transform(Number),
-  limit: z.string().optional().transform(Number),
+  page: z.coerce.number().optional(),
+  limit: z.coerce.number().optional(),
   search: z.string().optional(),
-  isActive: z.string().optional().transform(v => v === 'true'),
+  isActive: z.preprocess((val) => val === 'true' ? true : val === 'false' ? false : undefined, z.boolean().optional()),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });

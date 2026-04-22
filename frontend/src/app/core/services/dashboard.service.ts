@@ -84,12 +84,25 @@ export class DashboardService {
     return this.http.get<{ data: DashboardData }>(this.apiUrl, { params });
   }
 
+  private cache = new Map<string, { data: DashboardData; timestamp: number }>();
+
   getDashboardResource(period: () => string) {
-    return resource({
-      request: () => ({ period: period() }),
-      loader: ({ request }) => {
-        const params = new HttpParams().set('period', request.period);
-        return firstValueFrom(this.http.get<{ data: DashboardData }>(this.apiUrl, { params }));
+    return resource<{ data: DashboardData }, unknown>({
+      loader: async () => {
+        const p = period();
+        const now = Date.now();
+        const cached = this.cache.get(p);
+        
+        // Return cached data if valid (5 minutes)
+        if (cached && (now - cached.timestamp < 300000)) {
+          return { data: cached.data };
+        }
+
+        const params = new HttpParams().set('period', p);
+        const res = await firstValueFrom(this.http.get<{ data: DashboardData }>(this.apiUrl, { params }));
+        
+        this.cache.set(p, { data: res.data, timestamp: now });
+        return res;
       }
     });
   }

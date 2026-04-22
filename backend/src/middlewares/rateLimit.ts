@@ -7,7 +7,7 @@ export const rateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: { message: 'Too many requests' } },
-  skip: (req) => req.path === '/health',
+  skip: (req) => env.NODE_ENV === 'development' || req.path === '/health',
 });
 
 export const authRateLimiter = rateLimit({

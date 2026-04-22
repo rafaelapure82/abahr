@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import { authenticator } from 'otplib';
+import QRCode from 'qrcode';
 import { prisma } from '../../config/prisma';
 import redis from '../../config/redis';
 import { env } from '../../config/env';
@@ -13,6 +15,7 @@ import { logger } from '../../config/logger';
 export class AuthyUsersService {
   private static readonly SESSION_PREFIX = 'user:session:';
   private static readonly PERMISSIONS_CACHE_PREFIX = 'user:perms:';
+  private static readonly MFA_PENDING_PREFIX = 'mfa:pending:';
 
   /**
    * ── Authentication ────────────────────────────────────────────────────────
@@ -22,6 +25,7 @@ export class AuthyUsersService {
     const user = await prisma.user.findUnique({
       where: { email: data.email, deletedAt: null },
       include: {
+        employee: { select: { id: true } },
         roles: {
           include: {
             role: {
@@ -51,7 +55,55 @@ export class AuthyUsersService {
       throw Unauthorized('Invalid credentials');
     }
 
-    // Success - Create Serialized Session (Single Session enforcement)
+    // Check MFA
+    if (user.mfaEnabled) {
+      const mfaToken = uuidv4();
+      await redis.set(`${AuthyUsersService.MFA_PENDING_PREFIX}${mfaToken}`, user.id, 'EX', 300); // 5 minutes
+      return { mfaRequired: true, mfaToken };
+    }
+
+    return await this.finalizeLogin(user, ip);
+  }
+
+  async verify2FA(mfaToken: string, code: string, ip: string) {
+    const userId = await redis.get(`${AuthyUsersService.MFA_PENDING_PREFIX}${mfaToken}`);
+    if (!userId) throw Unauthorized('MFA session expired');
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        employee: { select: { id: true } },
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: { permission: true }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!user || !user.mfaSecret) throw Unauthorized('Invalid MFA state');
+
+    const isValid = authenticator.verify({
+      token: code,
+      secret: user.mfaSecret
+    });
+
+    if (!isValid) throw Unauthorized('Invalid verification code');
+
+    // Clean up
+    await redis.del(`${AuthyUsersService.MFA_PENDING_PREFIX}${mfaToken}`);
+
+    return await this.finalizeLogin(user, ip);
+  }
+
+  private async finalizeLogin(user: any, ip: string) {
+    // Success - Create Serialized Session
     const sessionId = uuidv4();
     await redis.set(`${AuthyUsersService.SESSION_PREFIX}${user.id}`, sessionId, 'EX', 60 * 60 * 24 * 7); // 7 days
 
@@ -73,7 +125,7 @@ export class AuthyUsersService {
     // Cache permissions for RBAC
     await this.cacheUserPermissions(user.id, user);
 
-    const { passwordHash, ...userResponse } = user;
+    const { passwordHash, mfaSecret, ...userResponse } = user;
     return { user: userResponse, accessToken, refreshToken };
   }
 
@@ -160,6 +212,58 @@ export class AuthyUsersService {
 
     if (!user) return [];
     return await this.cacheUserPermissions(userId, user);
+  }
+
+  /**
+   * ── MFA / 2FA ─────────────────────────────────────────────────────────────
+   */
+
+  async generate2FA(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw NotFound('User not found');
+
+    const secret = authenticator.generateSecret();
+    const otpauth = authenticator.keyuri(user.email, 'ABA Talent', secret);
+    const qrCode = await QRCode.toDataURL(otpauth);
+
+    // Save secret temporarily (or update directly if you prefer, but disabled until verified)
+    await prisma.user.update({
+      where: { id: userId },
+      data: { mfaSecret: secret }
+    });
+
+    return { secret, qrCode };
+  }
+
+  async enable2FA(userId: string, token: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.mfaSecret) throw BadRequest('MFA not initiated');
+
+    const isValid = authenticator.verify({
+      token,
+      secret: user.mfaSecret
+    });
+
+    if (!isValid) throw BadRequest('Invalid token');
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { mfaEnabled: true }
+    });
+
+    return { success: true };
+  }
+
+  async disable2FA(userId: string) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { 
+        mfaEnabled: false,
+        mfaSecret: null
+      }
+    });
+
+    return { success: true };
   }
 
   /**

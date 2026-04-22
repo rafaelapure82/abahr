@@ -1,4 +1,5 @@
 import winston from 'winston';
+import path from 'path';
 import { env } from './env';
 
 const { combine, timestamp, errors, colorize, printf, json } = winston.format;
@@ -33,19 +34,45 @@ const prettyFormat = combine(
 
 const productionFormat = combine(timestamp(), errors({ stack: true }), json());
 
+const logsDir = path.resolve(process.cwd(), 'logs');
+
 export const logger = winston.createLogger({
   level: env.LOG_LEVEL,
   levels,
   format: env.NODE_ENV === 'production' ? productionFormat : prettyFormat,
   transports: [
     new winston.transports.Console(),
-    ...(env.NODE_ENV === 'production'
-      ? [
-          new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-          new winston.transports.File({ filename: 'logs/combined.log' }),
-        ]
-      : []),
+    // Always write error logs to file for traceability
+    new winston.transports.File({
+      filename: path.join(logsDir, 'error.log'),
+      level: 'error',
+      maxsize: 10 * 1024 * 1024, // 10 MB rotation
+      maxFiles: 5,
+      tailable: true,
+    }),
+    // Combined log (info+) for auditing
+    new winston.transports.File({
+      filename: path.join(logsDir, 'combined.log'),
+      level: 'info',
+      maxsize: 20 * 1024 * 1024, // 20 MB rotation
+      maxFiles: 10,
+      tailable: true,
+    }),
+    // HTTP access logs separate file
+    new winston.transports.File({
+      filename: path.join(logsDir, 'access.log'),
+      level: 'http',
+      maxsize: 20 * 1024 * 1024,
+      maxFiles: 5,
+      tailable: true,
+    }),
   ],
-  exceptionHandlers: [new winston.transports.Console()],
-  rejectionHandlers: [new winston.transports.Console()],
+  exceptionHandlers: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: path.join(logsDir, 'exceptions.log') }),
+  ],
+  rejectionHandlers: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: path.join(logsDir, 'rejections.log') }),
+  ],
 });

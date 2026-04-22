@@ -28,8 +28,8 @@ export const payrollItemSchema = z.object({
 });
 
 export const payrollQuerySchema = z.object({
-  page: z.string().optional().transform(Number),
-  limit: z.string().optional().transform(Number),
+  page: z.coerce.number().optional(),
+  limit: z.coerce.number().optional(),
   status: z.nativeEnum(PayrollStatus).optional(),
 });
 

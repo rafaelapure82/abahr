@@ -18,10 +18,6 @@ interface KanbanColumn {
     selector: 'app-recruitment-kanban',
     imports: [
         CommonModule,
-        CardComponent,
-        CardHeaderComponent,
-        CardTitleComponent,
-        CardContentComponent,
         ButtonComponent,
         LucideAngularModule,
         DragDropModule

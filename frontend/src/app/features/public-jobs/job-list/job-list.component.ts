@@ -8,7 +8,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 
 @Component({
     selector: 'app-job-list',
-    imports: [CommonModule, RouterLink, LucideAngularModule, CardComponent, CardContentComponent, ButtonComponent],
+    imports: [CommonModule, RouterLink, LucideAngularModule, ButtonComponent],
     template: `
     <div class="min-h-screen bg-muted/30 pb-12">
       <!-- Hero -->

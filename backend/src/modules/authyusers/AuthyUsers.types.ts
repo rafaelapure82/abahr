@@ -40,6 +40,15 @@ export const permissionAssignSchema = z.object({
   permissionIds: z.array(z.string().uuid()),
 });
 
+export const verify2FASchema = z.object({
+  mfaToken: z.string().uuid(),
+  code: z.string().length(6),
+});
+
+export const enable2FASchema = z.object({
+  token: z.string().length(6),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

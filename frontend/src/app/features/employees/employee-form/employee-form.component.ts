@@ -20,8 +20,6 @@ interface Tab {
     RouterLink,
     FormsModule,
     CardComponent,
-    CardHeaderComponent,
-    CardTitleComponent,
     CardContentComponent,
     ButtonComponent,
     LucideAngularModule
@@ -157,7 +155,7 @@ interface Tab {
                     <select [ngModel]="formData().managerId" (ngModelChange)="updateField('managerId', $event)" name="managerId"
                             class="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary">
                       <option value="">No Manager</option>
-                      @for (mgr of managersResource.value()?.data; track mgr.id) {
+                      @for (mgr of (managersResource.value() && 'data' in managersResource.value()! ? managersResource.value()!.data : []); track mgr.id) {
                         <option [value]="mgr.id">{{ mgr.firstName }} {{ mgr.lastName }}</option>
                       }
                     </select>
@@ -449,12 +447,13 @@ export class EmployeeFormComponent implements OnInit {
 
   // Resources for loading data
   departmentsResource = this.employeeService.getDepartmentsResource();
-  managersResource = this.employeeService.getManagersResource(this.employeeId() || undefined);
-  employeeResource = this.employeeService.getEmployeeResource(this.employeeId());
+  managersResource = this.employeeService.getManagersResource(() => this.employeeId() || undefined);
+  employeeResource = this.employeeService.getEmployeeResource(() => this.employeeId());
 
   // Form State using linkedSignal to auto-populate when employeeResource changes
   formData = linkedSignal<any>(() => {
-    const emp = this.employeeResource.value()?.data;
+    const res = this.employeeResource.value();
+    const emp = res && 'data' in res ? res.data : null;
     if (emp) {
       return {
         firstName: emp.firstName,

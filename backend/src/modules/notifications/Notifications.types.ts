@@ -12,9 +12,9 @@ export const notificationSchema = z.object({
 });
 
 export const notificationsQuerySchema = z.object({
-  page: z.string().optional().transform(Number),
-  limit: z.string().optional().transform(Number),
-  isRead: z.string().optional().transform(v => v === 'true'),
+  page: z.coerce.number().optional(),
+  limit: z.coerce.number().optional(),
+  isRead: z.preprocess((val) => val === 'true' ? true : val === 'false' ? false : undefined, z.boolean().optional()),
 });
 
 export type CreateNotificationDto = z.infer<typeof notificationSchema>;

@@ -8,7 +8,7 @@ import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
     selector: 'app-payroll-detail',
-    imports: [CommonModule, RouterLink, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    imports: [CommonModule, RouterLink, LucideAngularModule],
     template: `
     <div class="min-h-[80vh] bg-transparent text-slate-200 font-sans p-4 md:p-8 animate-fade-in relative">
       <!-- Background Glow -->

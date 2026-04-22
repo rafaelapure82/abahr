@@ -7,16 +7,19 @@ export class AuthyUsersController {
   
   login = asyncHandler(async (req: Request, res: Response) => {
     const result = await authyUsersService.login(req.body, req.ip || '0.0.0.0');
-    
-    // Optional: Set refresh token in secure cookie
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
 
-    sendOk(res, { user: result.user, accessToken: result.accessToken }, 'Login successful');
+    if ((result as any).mfaRequired) {
+      return sendOk(res, result, 'MFA verification required');
+    }
+
+    sendOk(res, result, 'Login successful');
+  });
+
+  verify2FA = asyncHandler(async (req: Request, res: Response) => {
+    const { mfaToken, code } = req.body;
+    const result = await authyUsersService.verify2FA(mfaToken, code, req.ip || '0.0.0.0');
+
+    sendOk(res, result, 'MFA verification successful');
   });
 
   register = asyncHandler(async (req: Request, res: Response) => {
@@ -47,6 +50,29 @@ export class AuthyUsersController {
     const userId = (req as any).user.id;
     const permissions = await authyUsersService.getPermissions(userId);
     sendOk(res, { permissions }, 'User permissions retrieved');
+  });
+
+  /**
+   * ── MFA Management ────────────────────────────────────────────────────────
+   */
+
+  generate2FA = asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as any).user.id;
+    const result = await authyUsersService.generate2FA(userId);
+    sendOk(res, result, 'MFA setup initiated');
+  });
+
+  enable2FA = asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as any).user.id;
+    const { token } = req.body;
+    const result = await authyUsersService.enable2FA(userId, token);
+    sendOk(res, result, 'MFA enabled successfully');
+  });
+
+  disable2FA = asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as any).user.id;
+    const result = await authyUsersService.disable2FA(userId);
+    sendOk(res, result, 'MFA disabled successfully');
   });
 }
 

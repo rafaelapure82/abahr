@@ -9,7 +9,7 @@ export const createHolidaySchema = z.object({
 export const updateHolidaySchema = createHolidaySchema.partial();
 
 export const holidayQuerySchema = z.object({
-  year: z.string().optional().transform(Number),
+  year: z.coerce.number().optional(),
   country: z.string().optional(),
 });
 

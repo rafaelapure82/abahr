@@ -12,7 +12,7 @@ import { map } from 'rxjs/operators';
 
 @Component({
     selector: 'app-payroll-generate',
-    imports: [CommonModule, FormsModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    imports: [CommonModule, FormsModule, LucideAngularModule],
     template: `
     <div class="min-h-[80vh] flex flex-col items-center justify-center p-4 md:p-8 animate-fade-in relative">
       <!-- Decorative Background elements -->

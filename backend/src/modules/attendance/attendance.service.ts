@@ -1,5 +1,6 @@
 import { differenceInMinutes, startOfDay, endOfDay } from 'date-fns';
 import { prisma } from '../../config/prisma';
+import redis from '../../config/redis';
 import { parsePagination, paginate } from '../../common/utils/response';
 import { NotFound, BadRequest } from '../../common/utils/apiError';
 import { notificationsService } from '../notifications/Notifications.service';
@@ -77,6 +78,11 @@ export class AttendanceService {
       }
     });
 
+    // Invalidate stats cache
+    try {
+      await redis.del('attendance:stats:today');
+    } catch (err) {}
+
     return attendance;
   }
 
@@ -139,7 +145,7 @@ export class AttendanceService {
     // Calculate overtime
     const overtime = Math.max(0, hoursWorked - STD_SHIFT_HOURS);
 
-    return prisma.attendance.update({
+    const updated = await prisma.attendance.update({
       where: { id: record.id },
       data: {
         checkOut: checkOutTime,
@@ -149,6 +155,11 @@ export class AttendanceService {
         note: dto.note ? `${record.note || ''} | ${dto.note}` : record.note
       }
     });
+
+    // Invalidate stats cache
+    await redis.del('attendance:stats:today');
+
+    return updated;
   }
 
   async findAll(query: AttendanceQuery) {
@@ -186,6 +197,12 @@ export class AttendanceService {
   }
 
   async getDashboardStats() {
+    const cacheKey = 'attendance:stats:today';
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    } catch (err) {}
+
     const today = startOfDay(new Date());
     const [active, total, late] = await Promise.all([
       prisma.attendance.count({ where: { date: today, checkIn: { not: null }, checkOut: null } }),
@@ -193,12 +210,18 @@ export class AttendanceService {
       prisma.attendance.count({ where: { date: today, status: 'LATE' } }),
     ]);
 
-    return {
+    const result = {
       employeesPresent: active,
       employeesTotal: total,
       employeesLate: late,
       attendanceRate: total > 0 ? (active / total) * 100 : 0
     };
+
+    try {
+      await redis.setex(cacheKey, 60, JSON.stringify(result));
+    } catch (err) {}
+
+    return result;
   }
 }
 

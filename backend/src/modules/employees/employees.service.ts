@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { Prisma, DocumentType, AuditAction } from '@prisma/client';
 import { prisma } from '../../config/prisma';
+import redis from '../../config/redis';
 import { env } from '../../config/env';
 import { Conflict, NotFound } from '../../common/utils/apiError';
 import { parsePagination, paginate } from '../../common/utils/response';
@@ -84,11 +85,27 @@ export class EmployeesService {
 
   // ── Get by ID ─────────────────────────────────────────────────────────────
   async findById(id: string) {
+    const cacheKey = `employee:${id}`;
+    
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    } catch (err) {
+      console.error('Redis error:', err);
+    }
+
     const emp = await prisma.employee.findUnique({
       where: { id, deletedAt: null },
       select: DETAIL_SELECT,
     });
     if (!emp) throw NotFound('Employee');
+    
+    try {
+      await redis.setex(cacheKey, 3600, JSON.stringify(emp)); // Cache for 1h
+    } catch (err) {
+      console.error('Redis save error:', err);
+    }
+    
     return emp;
   }
 
@@ -152,6 +169,13 @@ export class EmployeesService {
     const diff = this.calculateDiff(oldState, employee);
     if (Object.keys(diff.newData).length > 0) {
       await this.logAudit(actorId, 'UPDATE', 'Employee', id, diff.oldData, diff.newData);
+    }
+
+    // Invalidate cache
+    try {
+      await redis.del(`employee:${id}`);
+    } catch (err) {
+      console.error('Redis invalidation error:', err);
     }
 
     return employee;
@@ -262,6 +286,13 @@ export class EmployeesService {
       prisma.user.update({ where: { id: employee.user!.id }, data: { deletedAt: new Date(), isActive: false } })
     ]);
     await this.logAudit(actorId, 'SOFT_DELETE', 'Employee', id, employee, { deletedAt: new Date() });
+    
+    // Invalidate cache
+    try {
+      await redis.del(`employee:${id}`);
+    } catch (err) {
+      console.error('Redis invalidation error:', err);
+    }
   }
 
   async getStats() {

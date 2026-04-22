@@ -11,11 +11,6 @@ import { LucideAngularModule } from 'lucide-angular';
     selector: 'app-login',
     imports: [
     ReactiveFormsModule,
-    ButtonComponent,
-    CardComponent,
-    CardHeaderComponent,
-    CardTitleComponent,
-    CardContentComponent,
     LucideAngularModule
 ],
     template: `

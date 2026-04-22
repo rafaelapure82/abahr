@@ -41,6 +41,14 @@ export class AuthService {
   private permissionsSubject = new BehaviorSubject<string[]>([]);
   public permissions$ = this.permissionsSubject.asObservable();
 
+  get isAuthenticated(): boolean {
+    return this.isAuthenticatedSubject.value;
+  }
+
+  get token(): string | null {
+    return localStorage.getItem('access_token');
+  }
+
   constructor() {
     this.checkSession();
   }

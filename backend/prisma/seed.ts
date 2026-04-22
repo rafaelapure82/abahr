@@ -730,24 +730,7 @@ async function main() {
     });
   }
 
-  // ═══════════════════════════════════════
-  // 9.1 LEAVE POLICIES
-  // ═══════════════════════════════════════
-  console.log('🏖️  Creating leave policies...');
 
-  const leavePolicies = [
-    { leaveType: LeaveType.VACATION, name: 'Vacaciones Anuales', daysAllowed: 15, carryoverDays: 5, minNoticeDays: 5, maxConsecutiveDays: 14 },
-    { leaveType: LeaveType.SICK,    name: 'Permiso Médico',     daysAllowed: 10, carryoverDays: 0, minNoticeDays: 0, maxConsecutiveDays: 99 },
-    { leaveType: LeaveType.PERSONAL, name: 'Asuntos Personales',  daysAllowed: 3,  carryoverDays: 0, minNoticeDays: 2, maxConsecutiveDays: 3 },
-  ];
-
-  for (const p of leavePolicies) {
-    await prisma.leavePolicy.upsert({
-      where: { leaveType: p.leaveType },
-      update: p,
-      create: p,
-    });
-  }
 
   // ═══════════════════════════════════════
   // 10. SYSTEM CONFIG

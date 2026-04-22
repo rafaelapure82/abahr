@@ -13,6 +13,8 @@ import { env } from './config/env';
 import { logger } from './config/logger';
 import { corsOptions } from './config/cors';
 import { helmetOptions } from './config/helmet';
+import { createRedisClient } from './config/redis';
+import { createAdapter } from '@socket.io/redis-adapter';
 
 // Middlewares
 import { rateLimiter } from './middlewares/rateLimit';
@@ -55,6 +57,11 @@ export function createApp(): { app: Application; io: SocketIO; httpServer: Serve
     path: '/ws',
   });
 
+  // Redis Adapter for Horizontal Scaling
+  const pubClient = createRedisClient();
+  const subClient = pubClient.duplicate();
+  io.adapter(createAdapter(pubClient, subClient));
+
   // Make io available in controllers
   app.set('io', io);
 
@@ -96,7 +103,16 @@ export function createApp(): { app: Application; io: SocketIO; httpServer: Serve
   // ── Global rate limiter ────────────────────────────────────────────────
   app.use('/api/', rateLimiter);
 
-  // ── Health check ───────────────────────────────────────────────────────
+  // ── Welcome & Health check ───────────────────────────────────────────
+  app.get('/', (_req, res) => {
+    res.json({
+      success: true,
+      message: '🚀 ABA Talent Management API is running',
+      docs: '/api/v1',
+      health: '/health'
+    });
+  });
+
   app.get('/health', (_req, res) => {
     res.json({
       status: 'healthy',

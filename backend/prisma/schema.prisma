@@ -126,10 +126,12 @@ enum AttendanceStatus {
 // ─── Payroll ──────────────────────────────────────────────────────────────
 enum PayrollStatus {
   DRAFT
+  PROCESSING
   PENDING_APPROVAL
   APPROVED
   PAID
   CANCELLED
+  FAILED
 }
 
 enum PayrollFrequency {
