@@ -5,10 +5,9 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
 import { NavbarComponent } from '../navbar/navbar.component';
 
 @Component({
-  selector: 'app-main-layout',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarComponent, NavbarComponent],
-  template: `
+    selector: 'app-main-layout',
+    imports: [CommonModule, RouterOutlet, SidebarComponent, NavbarComponent],
+    template: `
     <div class="min-h-screen bg-background flex">
       <!-- Sidebar -->
       <app-sidebar
@@ -40,7 +39,7 @@ import { NavbarComponent } from '../navbar/navbar.component';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host {
       display: block;
     }

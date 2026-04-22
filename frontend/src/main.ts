@@ -1,17 +1,16 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { provideRouter, withHashLocation, withPreloading, PreloadAllModules } from '@angular/router';
+import { provideRouter, withHashLocation } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { AppComponent } from './app/app.component';
 import { APP_ROUTES } from './app/app.routes';
 import { environment } from './environments/environment';
-import { enableProdMode } from '@angular/core';
+import { enableProdMode, provideExperimentalZonelessChangeDetection, importProvidersFrom } from '@angular/core';
 
 import { authInterceptor } from './app/core/auth/auth.interceptor';
 import { RouteReuseStrategy } from '@angular/router';
 import { AppRouteReuseStrategy } from './app/core/services/route-reuse.strategy';
 
-import { importProvidersFrom } from '@angular/core';
 import { 
   LucideAngularModule, 
   LayoutDashboard, Users, Award, Gift, Search, Settings, 
@@ -29,6 +28,7 @@ if (environment.production) {
 
 bootstrapApplication(AppComponent, {
   providers: [
+    provideExperimentalZonelessChangeDetection(),
     provideRouter(APP_ROUTES, withHashLocation()),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAnimations(),

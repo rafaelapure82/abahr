@@ -7,10 +7,9 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
-  selector: 'app-payroll-list',
-  standalone: true,
-  imports: [CommonModule, RouterLink, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
-  template: `
+    selector: 'app-payroll-list',
+    imports: [CommonModule, RouterLink, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    template: `
     <div class="min-h-[80vh] bg-transparent text-slate-200 font-sans p-4 md:p-8 animate-fade-in relative">
       <!-- Background Glow -->
       <div class="absolute -top-20 -right-20 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none"></div>

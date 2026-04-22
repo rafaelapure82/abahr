@@ -7,10 +7,9 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
-  selector: 'app-payroll-detail',
-  standalone: true,
-  imports: [CommonModule, RouterLink, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
-  template: `
+    selector: 'app-payroll-detail',
+    imports: [CommonModule, RouterLink, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    template: `
     <div class="min-h-[80vh] bg-transparent text-slate-200 font-sans p-4 md:p-8 animate-fade-in relative">
       <!-- Background Glow -->
       <div class="absolute -top-20 -left-20 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none"></div>
@@ -197,7 +196,7 @@ import { LucideAngularModule } from 'lucide-angular';
       .animate-fade-in { animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PayrollDetailComponent implements OnInit {
   private payrollService = inject(PayrollService);

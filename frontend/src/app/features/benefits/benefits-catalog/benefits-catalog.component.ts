@@ -6,19 +6,18 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { LucideAngularModule, Gift, Heart, Coffee, ShieldCheck } from 'lucide-angular';
 
 @Component({
-  selector: 'app-benefits-catalog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    CardComponent,
-    CardHeaderComponent,
-    CardTitleComponent,
-    CardContentComponent,
-    CardFooterComponent,
-    ButtonComponent,
-    LucideAngularModule
-  ],
-  template: `
+    selector: 'app-benefits-catalog',
+    imports: [
+        CommonModule,
+        CardComponent,
+        CardHeaderComponent,
+        CardTitleComponent,
+        CardContentComponent,
+        CardFooterComponent,
+        ButtonComponent,
+        LucideAngularModule
+    ],
+    template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
@@ -68,7 +67,7 @@ import { LucideAngularModule, Gift, Heart, Coffee, ShieldCheck } from 'lucide-an
       </div>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BenefitsCatalogComponent implements OnInit {
   private benefitsService = inject(BenefitsService);

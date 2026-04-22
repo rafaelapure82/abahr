@@ -7,10 +7,9 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
-  selector: 'app-leaves-admin',
-  standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
-  template: `
+    selector: 'app-leaves-admin',
+    imports: [CommonModule, FormsModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    template: `
     <div class="space-y-6">
       <div>
         <h2 class="text-3xl font-bold tracking-tight">Gestión de Ausencias</h2>
@@ -126,7 +125,7 @@ import { LucideAngularModule } from 'lucide-angular';
       </app-card>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LeavesAdminComponent implements OnInit {
   private leavesService = inject(LeavesService);

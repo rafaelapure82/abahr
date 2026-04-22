@@ -6,10 +6,9 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 import { LucideAngularModule, Bell, BellOff, CheckCircle2, Trash2, Clock, Info, AlertTriangle } from 'lucide-angular';
 
 @Component({
-  selector: 'app-notifications-page',
-  standalone: true,
-  imports: [CommonModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
-  template: `
+    selector: 'app-notifications-page',
+    imports: [CommonModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    template: `
     <div class="space-y-6 max-w-4xl mx-auto">
       <div class="flex items-center justify-between">
         <h2 class="text-3xl font-bold tracking-tight">Notificaciones</h2>
@@ -28,7 +27,7 @@ import { LucideAngularModule, Bell, BellOff, CheckCircle2, Trash2, Clock, Info, 
       </app-card>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NotificationsPageComponent implements OnInit {
   private notificationService = inject(NotificationService);

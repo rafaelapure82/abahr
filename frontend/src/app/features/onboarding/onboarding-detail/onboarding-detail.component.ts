@@ -7,10 +7,9 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
-  selector: 'app-onboarding-detail',
-  standalone: true,
-  imports: [CommonModule, RouterLink, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
-  template: `
+    selector: 'app-onboarding-detail',
+    imports: [CommonModule, RouterLink, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    template: `
     <div class="space-y-6">
       <!-- Header -->
       <div class="flex items-center gap-3">
@@ -106,7 +105,7 @@ import { LucideAngularModule } from 'lucide-angular';
       </ng-container>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OnboardingDetailComponent implements OnInit {
   private onboardingService = inject(OnboardingService);

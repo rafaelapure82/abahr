@@ -8,10 +8,9 @@ import { CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComp
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 
 @Component({
-  selector: 'app-job-apply',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, LucideAngularModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent],
-  template: `
+    selector: 'app-job-apply',
+    imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, LucideAngularModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent],
+    template: `
     <div class="min-h-screen bg-muted/30 pb-12 pt-8">
       <div class="max-w-2xl mx-auto px-6">
         <app-button variant="ghost" routerLink="/jobs" class="mb-6">
@@ -101,7 +100,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
       </div>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class JobApplyComponent implements OnInit {
   private fb = inject(FormBuilder);

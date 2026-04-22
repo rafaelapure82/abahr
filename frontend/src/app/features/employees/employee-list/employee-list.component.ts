@@ -14,23 +14,22 @@ import { MatSortModule, MatSort } from '@angular/material/sort';
 type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt';
 
 @Component({
-  selector: 'app-employee-list',
-  standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink,
-    FormsModule,
-    CardComponent,
-    CardHeaderComponent,
-    CardTitleComponent,
-    CardContentComponent,
-    ButtonComponent,
-    LucideAngularModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule
-  ],
-  styles: [`
+    selector: 'app-employee-list',
+    imports: [
+        CommonModule,
+        RouterLink,
+        FormsModule,
+        CardComponent,
+        CardHeaderComponent,
+        CardTitleComponent,
+        CardContentComponent,
+        ButtonComponent,
+        LucideAngularModule,
+        MatTableModule,
+        MatPaginatorModule,
+        MatSortModule
+    ],
+    styles: [`
     :host ::ng-deep {
       .mat-mdc-table, .mat-table {
         @apply bg-transparent w-full !important;
@@ -55,7 +54,7 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
       }
     }
   `],
-  template: `
+    template: `
     <div class="space-y-6">
       <!-- Header -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

@@ -6,18 +6,17 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { LucideAngularModule, Award, Plus, ArrowUpRight, MessageSquare } from 'lucide-angular';
 
 @Component({
-  selector: 'app-performance-dashboard',
-  standalone: true,
-  imports: [
-    CommonModule,
-    CardComponent,
-    CardHeaderComponent,
-    CardTitleComponent,
-    CardContentComponent,
-    ButtonComponent,
-    LucideAngularModule
-  ],
-  template: `
+    selector: 'app-performance-dashboard',
+    imports: [
+        CommonModule,
+        CardComponent,
+        CardHeaderComponent,
+        CardTitleComponent,
+        CardContentComponent,
+        ButtonComponent,
+        LucideAngularModule
+    ],
+    template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
@@ -129,7 +128,7 @@ import { LucideAngularModule, Award, Plus, ArrowUpRight, MessageSquare } from 'l
       </app-card>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PerformanceDashboardComponent implements OnInit {
   private performanceService = inject(PerformanceService);

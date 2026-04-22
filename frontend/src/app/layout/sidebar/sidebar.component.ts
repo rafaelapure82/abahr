@@ -4,14 +4,13 @@ import { RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
-  selector: 'app-sidebar',
-  standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    LucideAngularModule
-  ],
-  template: `
+    selector: 'app-sidebar',
+    imports: [
+        CommonModule,
+        RouterModule,
+        LucideAngularModule
+    ],
+    template: `
     <aside
       class="fixed left-0 top-0 z-40 h-screen transition-all duration-500 bg-[#0f172a]/95 backdrop-blur-2xl border-r border-white/5"
       [class.w-72]="!isCollapsed"
@@ -100,7 +99,7 @@ import { LucideAngularModule } from 'lucide-angular';
       </div>
     </aside>
   `,
-  styles: [`
+    styles: [`
     :host {
       display: block;
     }
@@ -130,7 +129,7 @@ import { LucideAngularModule } from 'lucide-angular';
       box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
     }
   `],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SidebarComponent {
   @Input() isCollapsed = false;

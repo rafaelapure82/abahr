@@ -7,10 +7,9 @@ import { CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComp
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
-  selector: 'app-attendance-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, LucideAngularModule],
-  template: `
+    selector: 'app-attendance-list',
+    imports: [CommonModule, FormsModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, LucideAngularModule],
+    template: `
     <div class="space-y-6">
       <div>
         <h2 class="text-3xl font-bold tracking-tight">Registros de Asistencia</h2>

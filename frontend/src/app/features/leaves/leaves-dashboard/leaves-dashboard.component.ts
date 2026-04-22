@@ -9,10 +9,9 @@ import { LucideAngularModule } from 'lucide-angular';
 const LEAVE_TYPES = ['VACATION', 'SICK', 'PERSONAL', 'MATERNITY', 'PATERNITY', 'BEREAVEMENT', 'UNPAID', 'STUDY', 'OTHER'];
 
 @Component({
-  selector: 'app-leaves-dashboard',
-  standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
-  template: `
+    selector: 'app-leaves-dashboard',
+    imports: [CommonModule, FormsModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    template: `
     <div class="space-y-6">
       <!-- Header -->
       <div class="flex items-center justify-between">
@@ -113,7 +112,7 @@ const LEAVE_TYPES = ['VACATION', 'SICK', 'PERSONAL', 'MATERNITY', 'PATERNITY', '
       </app-card>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LeavesDashboardComponent implements OnInit {
   private leavesService = inject(LeavesService);

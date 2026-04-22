@@ -15,19 +15,18 @@ interface KanbanColumn {
 }
 
 @Component({
-  selector: 'app-recruitment-kanban',
-  standalone: true,
-  imports: [
-    CommonModule,
-    CardComponent,
-    CardHeaderComponent,
-    CardTitleComponent,
-    CardContentComponent,
-    ButtonComponent,
-    LucideAngularModule,
-    DragDropModule
-  ],
-  template: `
+    selector: 'app-recruitment-kanban',
+    imports: [
+        CommonModule,
+        CardComponent,
+        CardHeaderComponent,
+        CardTitleComponent,
+        CardContentComponent,
+        ButtonComponent,
+        LucideAngularModule,
+        DragDropModule
+    ],
+    template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
@@ -94,7 +93,7 @@ interface KanbanColumn {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .cdk-drag-preview {
       box-sizing: border-box;
       border-radius: 8px;
@@ -112,7 +111,7 @@ interface KanbanColumn {
       transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
     }
   `],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecruitmentKanbanComponent implements OnInit {
   private recruitmentService = inject(RecruitmentService);

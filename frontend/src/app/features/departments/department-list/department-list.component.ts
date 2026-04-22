@@ -7,10 +7,9 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { LucideAngularModule, Building2, Plus, Users, ChevronRight, Pencil, Trash2, MapPin } from 'lucide-angular';
 
 @Component({
-  selector: 'app-department-list',
-  standalone: true,
-  imports: [CommonModule, RouterLink, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
-  template: `
+    selector: 'app-department-list',
+    imports: [CommonModule, RouterLink, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    template: `
     <div class="space-y-6">
       <!-- Header -->
       <div class="flex items-center justify-between">
@@ -139,7 +138,7 @@ import { LucideAngularModule, Building2, Plus, Users, ChevronRight, Pencil, Tras
       </app-card>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DepartmentListComponent implements OnInit {
   private deptService = inject(DepartmentService);

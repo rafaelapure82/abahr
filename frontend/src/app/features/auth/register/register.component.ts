@@ -7,19 +7,18 @@ import { CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComp
 import { LucideAngularModule, UserPlus, Mail, Lock, User, Briefcase, Building } from 'lucide-angular';
 
 @Component({
-  selector: 'app-register',
-  standalone: true,
-  imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
-    ButtonComponent, 
-    CardComponent, 
-    CardHeaderComponent, 
-    CardTitleComponent, 
-    CardContentComponent,
-    LucideAngularModule
-  ],
-  template: `
+    selector: 'app-register',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        ButtonComponent,
+        CardComponent,
+        CardHeaderComponent,
+        CardTitleComponent,
+        CardContentComponent,
+        LucideAngularModule
+    ],
+    template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
@@ -104,7 +103,7 @@ import { LucideAngularModule, UserPlus, Mail, Lock, User, Briefcase, Building } 
       </app-card>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RegisterComponent {
   private fb = inject(FormBuilder);

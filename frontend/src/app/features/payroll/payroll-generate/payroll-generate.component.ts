@@ -11,10 +11,9 @@ import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-payroll-generate',
-  standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
-  template: `
+    selector: 'app-payroll-generate',
+    imports: [CommonModule, FormsModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    template: `
     <div class="min-h-[80vh] flex flex-col items-center justify-center p-4 md:p-8 animate-fade-in relative">
       <!-- Decorative Background elements -->
       <div class="absolute top-1/4 -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none"></div>
@@ -131,7 +130,7 @@ import { map } from 'rxjs/operators';
       .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
     </style>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PayrollGenerateComponent {
   private payrollService = inject(PayrollService);

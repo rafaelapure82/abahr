@@ -8,20 +8,19 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { LucideAngularModule, Mail, Phone, MapPin, Briefcase, Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Upload, FileText, File, Image, X, Eye, Download, Trash2, Clock, User, Award, FileCheck, AlertCircle, CheckCircle, XCircle, LayoutDashboard, Users, Monitor, LayoutGrid, DollarSign, Settings, Bell, Search, Play, Pause, MoreVertical, Check } from 'lucide-angular';
 
 @Component({
-  selector: 'app-employee-detail',
-  standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink,
-    FormsModule,
-    CardComponent,
-    CardHeaderComponent,
-    CardTitleComponent,
-    CardContentComponent,
-    ButtonComponent,
-    LucideAngularModule
-  ],
-  template: `
+    selector: 'app-employee-detail',
+    imports: [
+        CommonModule,
+        RouterLink,
+        FormsModule,
+        CardComponent,
+        CardHeaderComponent,
+        CardTitleComponent,
+        CardContentComponent,
+        ButtonComponent,
+        LucideAngularModule
+    ],
+    template: `
     <div class="min-h-screen bg-[#0f172a] text-slate-200 font-sans selection:bg-indigo-500/30 overflow-x-hidden relative" *ngIf="employee">
       <!-- Background Decorations -->
       <div class="fixed inset-0 overflow-hidden pointer-events-none">

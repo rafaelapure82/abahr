@@ -6,10 +6,9 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { LucideAngularModule, Users, ChevronRight, ChevronDown } from 'lucide-angular';
 
 @Component({
-  selector: 'app-org-chart',
-  standalone: true,
-  imports: [CommonModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
-  template: `
+    selector: 'app-org-chart',
+    imports: [CommonModule, CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent, ButtonComponent, LucideAngularModule],
+    template: `
     <div class="space-y-6">
       <!-- Header -->
       <div class="flex items-center justify-between">
@@ -92,7 +91,7 @@ import { LucideAngularModule, Users, ChevronRight, ChevronDown } from 'lucide-an
       </ng-template>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrgChartComponent implements OnInit {
   private deptService = inject(DepartmentService);

@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
-  selector: 'app-settings-page',
-  standalone: true,
-  imports: [CommonModule, LucideAngularModule],
-  template: `
+    selector: 'app-settings-page',
+    imports: [CommonModule, LucideAngularModule],
+    template: `
     <div class="max-w-4xl mx-auto space-y-8 animate-fadeIn">
       <!-- Header -->
       <div>
@@ -103,13 +102,13 @@ import { LucideAngularModule } from 'lucide-angular';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
     .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
   `],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SettingsPageComponent {}

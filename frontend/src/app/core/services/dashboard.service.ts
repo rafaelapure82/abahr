@@ -1,7 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { resource } from '@angular/core';
+
 
 export interface KpiCard {
   label: string;
@@ -74,11 +76,21 @@ export class DashboardService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/dashboard`;
 
-  getDashboard(period: string = 'month', departmentId?: string): Observable<{ data: DashboardData }> {
+  getDashboard(period: string = 'month', departmentId?: string) {
     let params = new HttpParams().set('period', period);
     if (departmentId) {
       params = params.set('departmentId', departmentId);
     }
     return this.http.get<{ data: DashboardData }>(this.apiUrl, { params });
+  }
+
+  getDashboardResource(period: () => string) {
+    return resource({
+      request: () => ({ period: period() }),
+      loader: ({ request }) => {
+        const params = new HttpParams().set('period', request.period);
+        return firstValueFrom(this.http.get<{ data: DashboardData }>(this.apiUrl, { params }));
+      }
+    });
   }
 }

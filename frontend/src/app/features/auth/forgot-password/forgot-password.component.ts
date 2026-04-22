@@ -8,20 +8,19 @@ import { CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComp
 import { LucideAngularModule, Mail, ArrowLeft, CheckCircle } from 'lucide-angular';
 
 @Component({
-  selector: 'app-forgot-password',
-  standalone: true,
-  imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
-    RouterLink,
-    ButtonComponent, 
-    CardComponent, 
-    CardHeaderComponent, 
-    CardTitleComponent, 
-    CardContentComponent,
-    LucideAngularModule
-  ],
-  template: `
+    selector: 'app-forgot-password',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        RouterLink,
+        ButtonComponent,
+        CardComponent,
+        CardHeaderComponent,
+        CardTitleComponent,
+        CardContentComponent,
+        LucideAngularModule
+    ],
+    template: `
     <div class="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <div class="w-full max-w-md">
         <app-card class="border-none shadow-2xl">
@@ -83,7 +82,7 @@ import { LucideAngularModule, Mail, ArrowLeft, CheckCircle } from 'lucide-angula
       </div>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ForgotPasswordComponent {
   private fb = inject(FormBuilder);

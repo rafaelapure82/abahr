@@ -7,19 +7,18 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
-  selector: 'app-recruitment-dashboard',
-  standalone: true,
-  imports: [
-    CommonModule,
-    CardComponent,
-    CardHeaderComponent,
-    CardTitleComponent,
-    CardContentComponent,
-    ButtonComponent,
-    LucideAngularModule,
-    RouterLink
-  ],
-  template: `
+    selector: 'app-recruitment-dashboard',
+    imports: [
+        CommonModule,
+        CardComponent,
+        CardHeaderComponent,
+        CardTitleComponent,
+        CardContentComponent,
+        ButtonComponent,
+        LucideAngularModule,
+        RouterLink
+    ],
+    template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>

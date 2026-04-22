@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, resource } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface Employee {
@@ -197,6 +197,16 @@ export class EmployeeService {
     return this.http.get<{ data: Employee }>(`${this.apiUrl}/${id}`);
   }
 
+  getEmployeeResource(id: string | null) {
+    return resource({
+      request: () => ({ id }),
+      loader: ({ request }) => {
+        if (!request.id) return Promise.resolve({ data: null });
+        return firstValueFrom(this.getEmployeeById(request.id));
+      }
+    });
+  }
+
   getStats(): Observable<EmployeeStats> {
     return this.http.get<EmployeeStats>(`${this.apiUrl}/stats`);
   }
@@ -229,11 +239,24 @@ export class EmployeeService {
     return this.http.get<{ data: any[] }>(`${environment.apiUrl}/departments`);
   }
 
+  getDepartmentsResource() {
+    return resource({
+      loader: () => firstValueFrom(this.getDepartments())
+    });
+  }
+
   getManagers(excludeId?: string): Observable<{ data: Employee[] }> {
     let params = new HttpParams();
     if (excludeId) params = params.set('excludeId', excludeId);
     params = params.set('status', 'ACTIVE');
     return this.http.get<{ data: Employee[] }>(`${this.apiUrl}`, { params });
+  }
+
+  getManagersResource(excludeId?: string) {
+    return resource({
+      request: () => ({ excludeId }),
+      loader: ({ request }) => firstValueFrom(this.getManagers(request.excludeId))
+    });
   }
 
   getPositions(): Observable<{ data: any[] }> {

@@ -8,19 +8,18 @@ import { CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComp
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    ButtonComponent,
-    CardComponent,
-    CardHeaderComponent,
-    CardTitleComponent,
-    CardContentComponent,
-    LucideAngularModule
-  ],
-  template: `
+    selector: 'app-login',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        ButtonComponent,
+        CardComponent,
+        CardHeaderComponent,
+        CardTitleComponent,
+        CardContentComponent,
+        LucideAngularModule
+    ],
+    template: `
     <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <!-- Background Decorations -->
       <div class="absolute inset-0 pointer-events-none overflow-hidden">
@@ -123,7 +122,7 @@ import { LucideAngularModule } from 'lucide-angular';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }

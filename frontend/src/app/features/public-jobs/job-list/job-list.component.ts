@@ -7,10 +7,9 @@ import { CardComponent, CardContentComponent } from '../../../shared/components/
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 
 @Component({
-  selector: 'app-job-list',
-  standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule, CardComponent, CardContentComponent, ButtonComponent],
-  template: `
+    selector: 'app-job-list',
+    imports: [CommonModule, RouterLink, LucideAngularModule, CardComponent, CardContentComponent, ButtonComponent],
+    template: `
     <div class="min-h-screen bg-muted/30 pb-12">
       <!-- Hero -->
       <div class="bg-primary text-primary-foreground py-20 px-6 text-center">
@@ -87,7 +86,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
       </div>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class JobListComponent implements OnInit {
   private recruitmentService = inject(RecruitmentService);

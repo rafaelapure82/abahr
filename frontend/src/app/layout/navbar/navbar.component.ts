@@ -7,10 +7,9 @@ import { LucideAngularModule } from 'lucide-angular';
 import { take } from 'rxjs';
 
 @Component({
-  selector: 'app-navbar',
-  standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule],
-  template: `
+    selector: 'app-navbar',
+    imports: [CommonModule, RouterLink, LucideAngularModule],
+    template: `
     <header class="h-16 border-b border-border/30 bg-card/70 backdrop-blur-xl sticky top-0 z-30 flex items-center justify-between px-6">
       <!-- Left side: Breadcrumbs or Page Title -->
       <div class="flex items-center gap-4">
@@ -85,7 +84,7 @@ import { take } from 'rxjs';
       </div>
     </header>
   `,
-  styles: [`
+    styles: [`
     @keyframes slideDown {
       from { opacity: 0; transform: translateY(-4px); }
       to { opacity: 1; transform: translateY(0); }
@@ -94,7 +93,7 @@ import { take } from 'rxjs';
       animation: slideDown 0.15s ease-out forwards;
     }
   `],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NavbarComponent implements OnInit {
   private authService = inject(AuthService);
