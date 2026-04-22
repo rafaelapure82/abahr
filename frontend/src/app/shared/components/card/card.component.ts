@@ -1,9 +1,9 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
     selector: 'app-card',
-    imports: [CommonModule],
+    imports: [],
     template: `
     <div [class]="'rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm text-card-foreground shadow-sm hover:shadow-md transition-shadow duration-300 ' + className">
       <ng-content></ng-content>

@@ -1,5 +1,5 @@
 import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -10,15 +10,14 @@ import { LucideAngularModule } from 'lucide-angular';
 @Component({
     selector: 'app-login',
     imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        ButtonComponent,
-        CardComponent,
-        CardHeaderComponent,
-        CardTitleComponent,
-        CardContentComponent,
-        LucideAngularModule
-    ],
+    ReactiveFormsModule,
+    ButtonComponent,
+    CardComponent,
+    CardHeaderComponent,
+    CardTitleComponent,
+    CardContentComponent,
+    LucideAngularModule
+],
     template: `
     <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <!-- Background Decorations -->
@@ -70,58 +69,62 @@ import { LucideAngularModule } from 'lucide-angular';
                   formControlName="password"
                   placeholder="••••••••"
                   class="flex h-11 w-full rounded-xl border border-white/10 bg-white/[0.05] px-10 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
-                >
+                  >
                 <button
                   type="button"
                   (click)="showPassword = !showPassword"
                   class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                >
+                  >
                   <lucide-icon [name]="showPassword ? 'eye-off' : 'eye'" size="17"></lucide-icon>
                 </button>
               </div>
             </div>
-
+    
             <!-- Error -->
-            <div *ngIf="error" class="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium flex items-center gap-2">
-              <lucide-icon name="alert-circle" size="14"></lucide-icon>
-              {{ error }}
-            </div>
-
+            @if (error) {
+              <div class="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium flex items-center gap-2">
+                <lucide-icon name="alert-circle" size="14"></lucide-icon>
+                {{ error }}
+              </div>
+            }
+    
             <!-- Submit -->
             <button
               type="submit"
               [disabled]="loginForm.invalid || loading"
               class="w-full h-11 rounded-xl bg-gradient-to-r from-primary to-emerald-500 text-white font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
-            >
-              <lucide-icon *ngIf="loading" name="loader-2" size="18" class="animate-spin"></lucide-icon>
+              >
+              @if (loading) {
+                <lucide-icon name="loader-2" size="18" class="animate-spin"></lucide-icon>
+              }
               <span>{{ loading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}</span>
             </button>
           </form>
-
+    
           <!-- Divider -->
           <div class="flex items-center gap-3 my-5">
             <div class="flex-1 h-px bg-white/10"></div>
             <span class="text-xs text-slate-500">credenciales de prueba</span>
             <div class="flex-1 h-px bg-white/10"></div>
           </div>
-
+    
           <!-- Demo Credentials -->
           <button
             type="button"
             (click)="fillDemoCredentials()"
             class="w-full py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all flex items-center justify-center gap-2"
-          >
+            >
             <lucide-icon name="zap" size="14" class="text-primary"></lucide-icon>
             admin&#64;abatalent.com / Admin&#64;123!
           </button>
         </div>
-
+    
         <p class="text-center mt-6 text-sm text-slate-500">
           ¿Necesitas ayuda? <a href="#" class="text-primary font-medium hover:underline">Contacta a Soporte</a>
         </p>
       </div>
     </div>
-  `,
+    `,
     styles: [`
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(20px); }

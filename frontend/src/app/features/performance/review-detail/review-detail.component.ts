@@ -1,9 +1,9 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
     selector: 'app-review-detail',
-    imports: [CommonModule],
+    imports: [],
     template: `
     <div class="p-6">
       <h2 class="text-2xl font-bold">Review Details</h2>

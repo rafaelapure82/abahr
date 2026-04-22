@@ -21,7 +21,7 @@ import { LucideAngularModule } from 'lucide-angular';
           <p>{{ today | date:'EEEE, MMMM d, y' }}</p>
         </div>
       </div>
-
+    
       <!-- Clock Card -->
       <app-card>
         <app-card-content class="p-8">
@@ -55,13 +55,15 @@ import { LucideAngularModule } from 'lucide-angular';
                 </div>
               </div>
             </div>
-
+    
             <!-- Timer -->
-            <div *ngIf="isCheckedIn && !isCheckedOut" class="text-center">
-              <p class="text-4xl font-mono font-bold tracking-widest text-green-600">{{ elapsedTime }}</p>
-              <p class="text-xs text-muted-foreground mt-1">Time worked today</p>
-            </div>
-
+            @if (isCheckedIn && !isCheckedOut) {
+              <div class="text-center">
+                <p class="text-4xl font-mono font-bold tracking-widest text-green-600">{{ elapsedTime }}</p>
+                <p class="text-xs text-muted-foreground mt-1">Time worked today</p>
+              </div>
+            }
+    
             <!-- Check-in / Check-out info -->
             <div class="flex gap-8 text-center">
               <div>
@@ -79,47 +81,55 @@ import { LucideAngularModule } from 'lucide-angular';
                 <p class="font-semibold text-sm mt-1">{{ todayRecord?.hoursWorked || '0.00' }}h</p>
               </div>
             </div>
-
+    
             <!-- Action Buttons -->
-            <div class="flex gap-4" *ngIf="!loadingAction">
-              <app-button
-                *ngIf="!isCheckedIn"
-                variant="primary"
-                (click)="doCheckIn()"
-                class="px-8 py-3 text-lg">
-                <lucide-icon name="log-in" size="20" class="mr-2"></lucide-icon>
-                Check In
-              </app-button>
-              <app-button
-                *ngIf="isCheckedIn && !isCheckedOut"
-                variant="destructive"
-                (click)="doCheckOut()"
-                class="px-8 py-3 text-lg">
-                <lucide-icon name="log-out" size="20" class="mr-2"></lucide-icon>
-                Check Out
-              </app-button>
-            </div>
-            <div *ngIf="loadingAction" class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            @if (!loadingAction) {
+              <div class="flex gap-4">
+                @if (!isCheckedIn) {
+                  <app-button
+                    variant="primary"
+                    (click)="doCheckIn()"
+                    class="px-8 py-3 text-lg">
+                    <lucide-icon name="log-in" size="20" class="mr-2"></lucide-icon>
+                    Check In
+                  </app-button>
+                }
+                @if (isCheckedIn && !isCheckedOut) {
+                  <app-button
+                    variant="destructive"
+                    (click)="doCheckOut()"
+                    class="px-8 py-3 text-lg">
+                    <lucide-icon name="log-out" size="20" class="mr-2"></lucide-icon>
+                    Check Out
+                  </app-button>
+                }
+              </div>
+            }
+            @if (loadingAction) {
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            }
           </div>
         </app-card-content>
       </app-card>
-
+    
       <!-- Stats -->
       <div class="grid gap-4 md:grid-cols-4">
-        <app-card *ngFor="let stat of stats">
-          <app-card-content class="flex items-center gap-4 p-6">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" [ngClass]="stat.bg">
-              <lucide-icon [name]="stat.icon" size="20" [ngClass]="stat.color"></lucide-icon>
-            </div>
-            <div>
-              <p class="text-xs text-muted-foreground">{{ stat.label }}</p>
-              <p class="text-xl font-bold">{{ stat.value }}</p>
-            </div>
-          </app-card-content>
-        </app-card>
+        @for (stat of stats; track stat) {
+          <app-card>
+            <app-card-content class="flex items-center gap-4 p-6">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center" [ngClass]="stat.bg">
+                <lucide-icon [name]="stat.icon" size="20" [ngClass]="stat.color"></lucide-icon>
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">{{ stat.label }}</p>
+                <p class="text-xl font-bold">{{ stat.value }}</p>
+              </div>
+            </app-card-content>
+          </app-card>
+        }
       </div>
     </div>
-  `,
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AttendanceDashboardComponent implements OnInit, OnDestroy {

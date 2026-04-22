@@ -20,77 +20,94 @@ import { LucideAngularModule, Users, ChevronRight, ChevronDown } from 'lucide-an
           ← Volver a Departamentos
         </app-button>
       </div>
-
+    
       <!-- Loading State -->
-      <div *ngIf="loading" class="flex items-center justify-center h-64">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-
+      @if (loading) {
+        <div class="flex items-center justify-center h-64">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      }
+    
       <!-- Org Chart Tree -->
-      <div *ngIf="!loading" class="overflow-x-auto">
-        <app-card>
-          <app-card-content class="p-6">
-            <div *ngIf="tree.length === 0" class="text-center py-12 text-muted-foreground italic">
-              No hay datos organizacionales disponibles.
-            </div>
-            <div *ngFor="let node of tree" class="mb-4">
-              <ng-container *ngTemplateOutlet="treeNode; context: { node: node, depth: 0 }"></ng-container>
-            </div>
-          </app-card-content>
-        </app-card>
-      </div>
-
+      @if (!loading) {
+        <div class="overflow-x-auto">
+          <app-card>
+            <app-card-content class="p-6">
+              @if (tree.length === 0) {
+                <div class="text-center py-12 text-muted-foreground italic">
+                  No hay datos organizacionales disponibles.
+                </div>
+              }
+              @for (node of tree; track node) {
+                <div class="mb-4">
+                  <ng-container *ngTemplateOutlet="treeNode; context: { node: node, depth: 0 }"></ng-container>
+                </div>
+              }
+            </app-card-content>
+          </app-card>
+        </div>
+      }
+    
       <!-- Node template (recursive) -->
       <ng-template #treeNode let-node="node" let-depth="depth">
         <div [style.margin-left.px]="depth * 32" class="mb-2">
           <div class="flex items-stretch">
             <!-- Connector line -->
-            <div *ngIf="depth > 0" class="w-8 flex-shrink-0 relative">
-              <div class="absolute left-0 top-0 bottom-0 border-l-2 border-border"></div>
-              <div class="absolute left-0 top-6 w-8 border-t-2 border-border"></div>
-            </div>
-
+            @if (depth > 0) {
+              <div class="w-8 flex-shrink-0 relative">
+                <div class="absolute left-0 top-0 bottom-0 border-l-2 border-border"></div>
+                <div class="absolute left-0 top-6 w-8 border-t-2 border-border"></div>
+              </div>
+            }
+    
             <!-- Node Card -->
             <div class="flex-1 group">
               <div class="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-sm transition-all duration-200 cursor-pointer"
-                   (click)="toggleNode(node)">
+                (click)="toggleNode(node)">
                 <!-- Dept color dot -->
                 <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                     [style.background-color]="node.color || '#6366f1'">
+                  [style.background-color]="node.color || '#6366f1'">
                   {{ node.code?.substring(0, 2) || '?' }}
                 </div>
-
+    
                 <div class="flex-1 min-w-0">
                   <p class="font-semibold text-sm truncate">{{ node.name }}</p>
                   <p class="text-xs text-muted-foreground truncate">
                     <lucide-icon name="users" size="10" class="inline mr-1"></lucide-icon>
                     {{ node._count?.employees || 0 }} empleados
-                    <span *ngIf="node.head" class="ml-2 text-primary/70">
-                      Responsable: {{ node.head.firstName }} {{ node.head.lastName }}
-                    </span>
+                    @if (node.head) {
+                      <span class="ml-2 text-primary/70">
+                        Responsable: {{ node.head.firstName }} {{ node.head.lastName }}
+                      </span>
+                    }
                   </p>
                 </div>
-
-                <lucide-icon
-                  *ngIf="node.children?.length"
-                  [name]="isExpanded(node.id) ? 'chevron-down' : 'chevron-right'"
-                  size="16"
-                  class="text-muted-foreground flex-shrink-0">
-                </lucide-icon>
+    
+                @if (node.children?.length) {
+                  <lucide-icon
+                    [name]="isExpanded(node.id) ? 'chevron-down' : 'chevron-right'"
+                    size="16"
+                    class="text-muted-foreground flex-shrink-0">
+                  </lucide-icon>
+                }
               </div>
             </div>
           </div>
-
+    
           <!-- Children -->
-          <div *ngIf="isExpanded(node.id) && node.children?.length">
-            <div *ngFor="let child of node.children">
-              <ng-container *ngTemplateOutlet="treeNode; context: { node: child, depth: depth + 1 }"></ng-container>
+          @if (isExpanded(node.id) && node.children?.length) {
+            <div>
+              @for (child of node.children; track child) {
+                <div>
+                  <ng-container *ngTemplateOutlet="treeNode; context: { node: child, depth: depth + 1 }"></ng-container>
+                </div>
+              }
             </div>
-          </div>
+          }
         </div>
       </ng-template>
     </div>
-  `,
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrgChartComponent implements OnInit {

@@ -34,65 +34,66 @@ interface KanbanColumn {
           <p class="text-muted-foreground">Gestiona el flujo de candidatos visualmente.</p>
         </div>
         <div class="flex gap-2">
-           <app-button variant="outline" routerLink="/recruitment">
-             <lucide-icon name="layout-dashboard" size="16" class="mr-2"></lucide-icon> Vista General
-           </app-button>
+          <app-button variant="outline" routerLink="/recruitment">
+            <lucide-icon name="layout-dashboard" size="16" class="mr-2"></lucide-icon> Vista General
+          </app-button>
         </div>
       </div>
-
+    
       <!-- Job Filter (Future) -->
-      
+    
       <!-- Kanban Board -->
       <div class="flex gap-6 overflow-x-auto pb-4 min-h-[600px]" cdkDropListGroup>
-        <div *ngFor="let col of columns" class="flex-shrink-0 w-80 flex flex-col gap-4">
-          <div class="flex items-center justify-between px-2">
-             <h3 class="font-semibold text-sm uppercase tracking-wider text-muted-foreground">{{ col.name }}</h3>
-             <span class="bg-muted text-muted-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">{{ col.items.length }}</span>
-          </div>
-
-          <div
-            cdkDropList
-            [cdkDropListData]="col.items"
-            (cdkDropListDropped)="drop($event)"
-            class="flex-1 bg-muted/30 rounded-xl p-3 border-2 border-dashed border-transparent hover:border-primary/20 transition-colors min-h-[500px] space-y-3"
-          >
+        @for (col of columns; track col) {
+          <div class="flex-shrink-0 w-80 flex flex-col gap-4">
+            <div class="flex items-center justify-between px-2">
+              <h3 class="font-semibold text-sm uppercase tracking-wider text-muted-foreground">{{ col.name }}</h3>
+              <span class="bg-muted text-muted-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">{{ col.items.length }}</span>
+            </div>
             <div
-              *ngFor="let app of col.items"
-              cdkDrag
-              class="bg-card p-4 rounded-lg border border-border shadow-sm cursor-grab active:cursor-grabbing hover:border-primary/50 transition-all group"
-            >
-              <div class="flex justify-between items-start mb-2">
-                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                  {{ app.candidate?.firstName?.[0] }}{{ app.candidate?.lastName?.[0] }}
+              cdkDropList
+              [cdkDropListData]="col.items"
+              (cdkDropListDropped)="drop($event)"
+              class="flex-1 bg-muted/30 rounded-xl p-3 border-2 border-dashed border-transparent hover:border-primary/20 transition-colors min-h-[500px] space-y-3"
+              >
+              @for (app of col.items; track app) {
+                <div
+                  cdkDrag
+                  class="bg-card p-4 rounded-lg border border-border shadow-sm cursor-grab active:cursor-grabbing hover:border-primary/50 transition-all group"
+                  >
+                  <div class="flex justify-between items-start mb-2">
+                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                      {{ app.candidate?.firstName?.[0] }}{{ app.candidate?.lastName?.[0] }}
+                    </div>
+                    <button class="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded text-muted-foreground transition-opacity">
+                      <lucide-icon name="more-vertical" size="14"></lucide-icon>
+                    </button>
+                  </div>
+                  <h4 class="font-medium text-sm">{{ app.candidate?.firstName }} {{ app.candidate?.lastName }}</h4>
+                  <p class="text-[10px] text-muted-foreground mt-1 uppercase font-bold tracking-tight">{{ app.job?.title }}</p>
+                  <div class="mt-4 flex items-center justify-between">
+                    <div class="flex -space-x-2">
+                      <div class="w-5 h-5 rounded-full border-2 border-card bg-muted text-[8px] flex items-center justify-center">?</div>
+                    </div>
+                    <span class="text-[9px] text-muted-foreground flex items-center gap-1">
+                      <lucide-icon name="clock" size="10"></lucide-icon>
+                      {{ app.appliedAt | date:'d MMM' }}
+                    </span>
+                  </div>
                 </div>
-                <button class="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded text-muted-foreground transition-opacity">
-                   <lucide-icon name="more-vertical" size="14"></lucide-icon>
-                </button>
-              </div>
-              
-              <h4 class="font-medium text-sm">{{ app.candidate?.firstName }} {{ app.candidate?.lastName }}</h4>
-              <p class="text-[10px] text-muted-foreground mt-1 uppercase font-bold tracking-tight">{{ app.job?.title }}</p>
-              
-              <div class="mt-4 flex items-center justify-between">
-                 <div class="flex -space-x-2">
-                    <div class="w-5 h-5 rounded-full border-2 border-card bg-muted text-[8px] flex items-center justify-center">?</div>
-                 </div>
-                 <span class="text-[9px] text-muted-foreground flex items-center gap-1">
-                    <lucide-icon name="clock" size="10"></lucide-icon>
-                    {{ app.appliedAt | date:'d MMM' }}
-                 </span>
-              </div>
-            </div>
-
-            <!-- Empty State -->
-            <div *ngIf="col.items.length === 0" class="flex flex-col items-center justify-center h-32 text-muted-foreground/40 italic text-xs">
-               Sin candidatos
+              }
+              <!-- Empty State -->
+              @if (col.items.length === 0) {
+                <div class="flex flex-col items-center justify-center h-32 text-muted-foreground/40 italic text-xs">
+                  Sin candidatos
+                </div>
+              }
             </div>
           </div>
-        </div>
+        }
       </div>
     </div>
-  `,
+    `,
     styles: [`
     .cdk-drag-preview {
       box-sizing: border-box;

@@ -15,7 +15,7 @@ import { LucideAngularModule } from 'lucide-angular';
         <h2 class="text-3xl font-bold tracking-tight">Gestión de Ausencias</h2>
         <p class="text-muted-foreground">Revisa y aprueba las solicitudes de ausencia de los empleados.</p>
       </div>
-
+    
       <!-- Pending Count -->
       <div class="grid md:grid-cols-3 gap-4">
         <app-card>
@@ -52,7 +52,7 @@ import { LucideAngularModule } from 'lucide-angular';
           </app-card-content>
         </app-card>
       </div>
-
+    
       <!-- Filters -->
       <app-card>
         <app-card-content class="p-4">
@@ -77,54 +77,62 @@ import { LucideAngularModule } from 'lucide-angular';
           </div>
         </app-card-content>
       </app-card>
-
+    
       <!-- Requests Table -->
       <app-card>
         <app-card-content class="p-0">
-          <div *ngIf="loading" class="p-8 text-center">
-            <div class="animate-spin h-6 w-6 rounded-full border-b-2 border-primary mx-auto"></div>
-          </div>
-          <div *ngIf="!loading && leaves.length === 0" class="p-8 text-center text-muted-foreground italic">
-            No se encontraron solicitudes.
-          </div>
-
-          <div *ngFor="let leave of leaves" class="p-4 border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                  {{ leave.employee?.firstName?.[0] }}{{ leave.employee?.lastName?.[0] }}
+          @if (loading) {
+            <div class="p-8 text-center">
+              <div class="animate-spin h-6 w-6 rounded-full border-b-2 border-primary mx-auto"></div>
+            </div>
+          }
+          @if (!loading && leaves.length === 0) {
+            <div class="p-8 text-center text-muted-foreground italic">
+              No se encontraron solicitudes.
+            </div>
+          }
+    
+          @for (leave of leaves; track leave) {
+            <div class="p-4 border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                    {{ leave.employee?.firstName?.[0] }}{{ leave.employee?.lastName?.[0] }}
+                  </div>
+                  <div>
+                    <p class="font-semibold text-sm">{{ leave.employee?.firstName }} {{ leave.employee?.lastName }}</p>
+                    <p class="text-xs text-muted-foreground">{{ translateLeaveType(leave.leaveType) }} — {{ leave.daysRequested }} día(s)</p>
+                    <p class="text-xs text-muted-foreground mt-0.5">
+                      {{ leave.startDate | date:'MMM d' }} → {{ leave.endDate | date:'MMM d, y' }}
+                    </p>
+                    @if (leave.reason) {
+                      <p class="text-xs text-muted-foreground italic mt-1">"{{ leave.reason }}"</p>
+                    }
+                  </div>
                 </div>
-                <div>
-                  <p class="font-semibold text-sm">{{ leave.employee?.firstName }} {{ leave.employee?.lastName }}</p>
-                  <p class="text-xs text-muted-foreground">{{ translateLeaveType(leave.leaveType) }} — {{ leave.daysRequested }} día(s)</p>
-                  <p class="text-xs text-muted-foreground mt-0.5">
-                    {{ leave.startDate | date:'MMM d' }} → {{ leave.endDate | date:'MMM d, y' }}
-                  </p>
-                  <p *ngIf="leave.reason" class="text-xs text-muted-foreground italic mt-1">"{{ leave.reason }}"</p>
-                </div>
-              </div>
-
-              <div class="flex flex-col items-end gap-2">
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                      [ngClass]="statusClass(leave.status)">
-                  {{ leave.status }}
-                </span>
-
-                <div *ngIf="leave.status === 'PENDING'" class="flex gap-1.5">
-                  <app-button variant="primary" size="sm" (click)="review(leave.id, 'approve')">
-                    <lucide-icon name="check" size="14" class="mr-1"></lucide-icon> Aprobar
-                  </app-button>
-                  <app-button variant="destructive" size="sm" (click)="review(leave.id, 'reject')">
-                    <lucide-icon name="x" size="14" class="mr-1"></lucide-icon> Rechazar
-                  </app-button>
+                <div class="flex flex-col items-end gap-2">
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                    [ngClass]="statusClass(leave.status)">
+                    {{ leave.status }}
+                  </span>
+                  @if (leave.status === 'PENDING') {
+                    <div class="flex gap-1.5">
+                      <app-button variant="primary" size="sm" (click)="review(leave.id, 'approve')">
+                        <lucide-icon name="check" size="14" class="mr-1"></lucide-icon> Aprobar
+                      </app-button>
+                      <app-button variant="destructive" size="sm" (click)="review(leave.id, 'reject')">
+                        <lucide-icon name="x" size="14" class="mr-1"></lucide-icon> Rechazar
+                      </app-button>
+                    </div>
+                  }
                 </div>
               </div>
             </div>
-          </div>
+          }
         </app-card-content>
       </app-card>
     </div>
-  `,
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LeavesAdminComponent implements OnInit {

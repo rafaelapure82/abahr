@@ -18,18 +18,22 @@ import { LucideAngularModule } from 'lucide-angular';
         </app-button>
         <div>
           <h2 class="text-3xl font-bold tracking-tight">Lista de Verificación de Ingreso</h2>
-          <p class="text-muted-foreground" *ngIf="onboarding">
-            {{ onboarding.employee?.firstName }} {{ onboarding.employee?.lastName }}
-          </p>
+          @if (onboarding) {
+            <p class="text-muted-foreground">
+              {{ onboarding.employee?.firstName }} {{ onboarding.employee?.lastName }}
+            </p>
+          }
         </div>
       </div>
-
+    
       <!-- Loading -->
-      <div *ngIf="loading" class="flex justify-center p-12">
-        <div class="animate-spin h-8 w-8 rounded-full border-b-2 border-primary"></div>
-      </div>
-
-      <ng-container *ngIf="!loading && onboarding">
+      @if (loading) {
+        <div class="flex justify-center p-12">
+          <div class="animate-spin h-8 w-8 rounded-full border-b-2 border-primary"></div>
+        </div>
+      }
+    
+      @if (!loading && onboarding) {
         <!-- Progress -->
         <app-card>
           <app-card-content class="p-6">
@@ -41,26 +45,27 @@ import { LucideAngularModule } from 'lucide-angular';
                 </div>
                 <div class="h-3 bg-muted rounded-full overflow-hidden">
                   <div class="h-full bg-primary transition-all duration-700 rounded-full"
-                       [style.width.%]="progress"></div>
+                  [style.width.%]="progress"></div>
                 </div>
                 <div class="flex gap-6 mt-3 text-sm text-muted-foreground">
                   <span>✅ {{ completedCount }} Completado</span>
                   <span>⏳ {{ pendingCount }} Pendiente</span>
-                  <span *ngIf="onboarding.targetDate">
-                    📅 Vence: {{ onboarding.targetDate | date:'MMM d, y' }}
-                  </span>
+                  @if (onboarding.targetDate) {
+                    <span>
+                      📅 Vence: {{ onboarding.targetDate | date:'MMM d, y' }}
+                    </span>
+                  }
                 </div>
               </div>
               <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold"
-                    [ngClass]="statusClass(onboarding.status)">
+                [ngClass]="statusClass(onboarding.status)">
                 {{ onboarding.status | titlecase }}
               </span>
             </div>
           </app-card-content>
         </app-card>
-
         <!-- Tasks by Category -->
-        <ng-container *ngFor="let category of categories">
+        @for (category of categories; track category) {
           <app-card>
             <app-card-header>
               <app-card-title class="flex items-center gap-2">
@@ -69,42 +74,50 @@ import { LucideAngularModule } from 'lucide-angular';
               </app-card-title>
             </app-card-header>
             <app-card-content class="p-0">
-              <div *ngFor="let task of tasksByCategory(category)" class="p-4 border-b border-border last:border-0">
-                <div class="flex items-start gap-3">
-                  <!-- Toggle Checkbox -->
-                  <button
-                    class="mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200"
+              @for (task of tasksByCategory(category); track task) {
+                <div class="p-4 border-b border-border last:border-0">
+                  <div class="flex items-start gap-3">
+                    <!-- Toggle Checkbox -->
+                    <button
+                      class="mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200"
                     [ngClass]="task.status === 'COMPLETED'
                       ? 'bg-primary border-primary text-primary-foreground'
                       : 'border-border hover:border-primary'"
-                    (click)="toggleTask(task)">
-                    <lucide-icon *ngIf="task.status === 'COMPLETED'" name="check" size="12"></lucide-icon>
-                  </button>
-
-                  <div class="flex-1">
-                    <p class="font-medium text-sm" [class.line-through]="task.status === 'COMPLETED'"
-                       [class.text-muted-foreground]="task.status === 'COMPLETED'">
-                      {{ task.title }}
-                    </p>
-                    <p *ngIf="task.description" class="text-xs text-muted-foreground mt-0.5">{{ task.description }}</p>
-                    <div class="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span *ngIf="task.dueDate">Vence {{ task.dueDate | date:'MMM d' }}</span>
-                      <span class="inline-flex items-center rounded-full px-1.5 py-0.5 text-xs"
-                            [ngClass]="taskStatusClass(task.status)">
-                        {{ task.status }}
-                      </span>
+                      (click)="toggleTask(task)">
+                      @if (task.status === 'COMPLETED') {
+                        <lucide-icon name="check" size="12"></lucide-icon>
+                      }
+                    </button>
+                    <div class="flex-1">
+                      <p class="font-medium text-sm" [class.line-through]="task.status === 'COMPLETED'"
+                        [class.text-muted-foreground]="task.status === 'COMPLETED'">
+                        {{ task.title }}
+                      </p>
+                      @if (task.description) {
+                        <p class="text-xs text-muted-foreground mt-0.5">{{ task.description }}</p>
+                      }
+                      <div class="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        @if (task.dueDate) {
+                          <span>Vence {{ task.dueDate | date:'MMM d' }}</span>
+                        }
+                        <span class="inline-flex items-center rounded-full px-1.5 py-0.5 text-xs"
+                          [ngClass]="taskStatusClass(task.status)">
+                          {{ task.status }}
+                        </span>
+                      </div>
                     </div>
+                    @if (task.isRequired) {
+                      <span class="text-xs text-red-500 font-medium flex-shrink-0">Requerido</span>
+                    }
                   </div>
-
-                  <span *ngIf="task.isRequired" class="text-xs text-red-500 font-medium flex-shrink-0">Requerido</span>
                 </div>
-              </div>
+              }
             </app-card-content>
           </app-card>
-        </ng-container>
-      </ng-container>
+        }
+      }
     </div>
-  `,
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OnboardingDetailComponent implements OnInit {

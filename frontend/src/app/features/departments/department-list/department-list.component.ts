@@ -26,7 +26,7 @@ import { LucideAngularModule, Building2, Plus, Users, ChevronRight, Pencil, Tras
           </app-button>
         </div>
       </div>
-
+    
       <!-- Stats -->
       <div class="grid gap-4 md:grid-cols-3">
         <app-card>
@@ -63,7 +63,7 @@ import { LucideAngularModule, Building2, Plus, Users, ChevronRight, Pencil, Tras
           </app-card-content>
         </app-card>
       </div>
-
+    
       <!-- Departments Table -->
       <app-card>
         <app-card-header>
@@ -82,62 +82,68 @@ import { LucideAngularModule, Building2, Plus, Users, ChevronRight, Pencil, Tras
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="loading" class="border-b border-border">
-                <td colspan="6" class="p-8 text-center">
-                  <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                </td>
-              </tr>
-              <tr *ngIf="!loading && departments.length === 0" class="border-b border-border">
-                <td colspan="6" class="p-8 text-center text-muted-foreground italic">No se encontraron departamentos.</td>
-              </tr>
-              <tr *ngFor="let dept of departments" class="border-b border-border hover:bg-muted/30 transition-colors">
-                <td class="p-4 align-middle">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-                         [style.background-color]="dept.color || '#6366f1'">
-                      {{ dept.code?.substring(0, 2) }}
+              @if (loading) {
+                <tr class="border-b border-border">
+                  <td colspan="6" class="p-8 text-center">
+                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                  </td>
+                </tr>
+              }
+              @if (!loading && departments.length === 0) {
+                <tr class="border-b border-border">
+                  <td colspan="6" class="p-8 text-center text-muted-foreground italic">No se encontraron departamentos.</td>
+                </tr>
+              }
+              @for (dept of departments; track dept) {
+                <tr class="border-b border-border hover:bg-muted/30 transition-colors">
+                  <td class="p-4 align-middle">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
+                        [style.background-color]="dept.color || '#6366f1'">
+                        {{ dept.code?.substring(0, 2) }}
+                      </div>
+                      <div>
+                        <p class="font-medium">{{ dept.name }}</p>
+                        <p class="text-xs text-muted-foreground">{{ dept.description }}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p class="font-medium">{{ dept.name }}</p>
-                      <p class="text-xs text-muted-foreground">{{ dept.description }}</p>
+                  </td>
+                  <td class="p-4 align-middle">
+                    <code class="text-xs bg-muted px-2 py-1 rounded">{{ dept.code }}</code>
+                  </td>
+                  <td class="p-4 align-middle text-sm">
+                    {{ dept.head ? dept.head.firstName + ' ' + dept.head.lastName : '—' }}
+                  </td>
+                  <td class="p-4 align-middle">
+                    <span class="flex items-center gap-1">
+                      <lucide-icon name="users" size="14" class="text-muted-foreground"></lucide-icon>
+                      {{ dept._count?.employees || 0 }}
+                    </span>
+                  </td>
+                  <td class="p-4 align-middle">
+                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                      [ngClass]="dept.isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700'">
+                      {{ dept.isActive ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="p-4 align-middle text-right">
+                    <div class="flex justify-end gap-1">
+                      <app-button variant="ghost" size="sm">
+                        <lucide-icon name="pencil" size="14"></lucide-icon>
+                      </app-button>
+                      <app-button variant="ghost" size="sm">
+                        <lucide-icon name="trash-2" size="14"></lucide-icon>
+                      </app-button>
                     </div>
-                  </div>
-                </td>
-                <td class="p-4 align-middle">
-                  <code class="text-xs bg-muted px-2 py-1 rounded">{{ dept.code }}</code>
-                </td>
-                <td class="p-4 align-middle text-sm">
-                  {{ dept.head ? dept.head.firstName + ' ' + dept.head.lastName : '—' }}
-                </td>
-                <td class="p-4 align-middle">
-                  <span class="flex items-center gap-1">
-                    <lucide-icon name="users" size="14" class="text-muted-foreground"></lucide-icon>
-                    {{ dept._count?.employees || 0 }}
-                  </span>
-                </td>
-                <td class="p-4 align-middle">
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                        [ngClass]="dept.isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700'">
-                    {{ dept.isActive ? 'Activo' : 'Inactivo' }}
-                  </span>
-                </td>
-                <td class="p-4 align-middle text-right">
-                  <div class="flex justify-end gap-1">
-                    <app-button variant="ghost" size="sm">
-                      <lucide-icon name="pencil" size="14"></lucide-icon>
-                    </app-button>
-                    <app-button variant="ghost" size="sm">
-                      <lucide-icon name="trash-2" size="14"></lucide-icon>
-                    </app-button>
-                  </div>
-                </td>
-              </tr>
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </app-card-content>
       </app-card>
     </div>
-  `,
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DepartmentListComponent implements OnInit {

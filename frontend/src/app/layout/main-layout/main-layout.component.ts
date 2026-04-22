@@ -1,12 +1,12 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { NavbarComponent } from '../navbar/navbar.component';
 
 @Component({
     selector: 'app-main-layout',
-    imports: [CommonModule, RouterOutlet, SidebarComponent, NavbarComponent],
+    imports: [RouterOutlet, SidebarComponent, NavbarComponent],
     template: `
     <div class="min-h-screen bg-background flex">
       <!-- Sidebar -->

@@ -1,22 +1,24 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link';
 type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 @Component({
     selector: 'app-button',
-    imports: [CommonModule],
+    imports: [],
     template: `
     <button
       [type]="type"
       [disabled]="disabled || loading"
       [class]="buttonClasses"
-    >
-      <span *ngIf="loading" class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+      >
+      @if (loading) {
+        <span class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+      }
       <ng-content></ng-content>
     </button>
-  `,
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ButtonComponent {

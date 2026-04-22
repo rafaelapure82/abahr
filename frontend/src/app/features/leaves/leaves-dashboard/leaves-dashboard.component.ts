@@ -24,94 +24,110 @@ const LEAVE_TYPES = ['VACATION', 'SICK', 'PERSONAL', 'MATERNITY', 'PATERNITY', '
           Solicitar Ausencia
         </app-button>
       </div>
-
+    
       <!-- Leave Request Form -->
-      <app-card *ngIf="showForm" class="border-primary/30">
-        <app-card-header>
-          <app-card-title>Nueva Solicitud de Ausencia</app-card-title>
-        </app-card-header>
-        <app-card-content class="p-6">
-          <div class="grid md:grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium">Tipo de Ausencia</label>
-              <select [(ngModel)]="form.leaveType"
-                class="h-10 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                <option value="">Seleccionar tipo...</option>
-                <option *ngFor="let t of leaveTypes" [value]="t">{{ translateLeaveType(t) }}</option>
-              </select>
+      @if (showForm) {
+        <app-card class="border-primary/30">
+          <app-card-header>
+            <app-card-title>Nueva Solicitud de Ausencia</app-card-title>
+          </app-card-header>
+          <app-card-content class="p-6">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium">Tipo de Ausencia</label>
+                <select [(ngModel)]="form.leaveType"
+                  class="h-10 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                  <option value="">Seleccionar tipo...</option>
+                  @for (t of leaveTypes; track t) {
+                    <option [value]="t">{{ translateLeaveType(t) }}</option>
+                  }
+                </select>
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium">Fecha de Inicio</label>
+                <input type="date" [(ngModel)]="form.startDate" (change)="calcDays()"
+                  class="h-10 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium">Fecha de Fin</label>
+                <input type="date" [(ngModel)]="form.endDate" (change)="calcDays()"
+                  class="h-10 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium">Días Solicitados</label>
+                <input type="number" [(ngModel)]="form.daysRequested" [readonly]="true"
+                  class="h-10 rounded-md border border-border bg-muted px-3 py-2 text-sm">
+              </div>
+              <div class="flex flex-col gap-1 md:col-span-2">
+                <label class="text-sm font-medium">Motivo <span class="text-muted-foreground">(opcional)</span></label>
+                <textarea [(ngModel)]="form.reason" rows="3" placeholder="Añade un motivo..."
+                  class="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none">
+                </textarea>
+              </div>
             </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium">Fecha de Inicio</label>
-              <input type="date" [(ngModel)]="form.startDate" (change)="calcDays()"
-                class="h-10 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+            <div class="flex gap-2 mt-4">
+              <app-button variant="primary" (click)="submitRequest()" [disabled]="submitting">
+                @if (submitting) {
+                  <lucide-icon name="loader-2" size="16" class="mr-2 animate-spin"></lucide-icon>
+                }
+                Enviar Solicitud
+              </app-button>
+              <app-button variant="outline" (click)="showForm = false">Cancelar</app-button>
             </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium">Fecha de Fin</label>
-              <input type="date" [(ngModel)]="form.endDate" (change)="calcDays()"
-                class="h-10 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-            </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium">Días Solicitados</label>
-              <input type="number" [(ngModel)]="form.daysRequested" [readonly]="true"
-                class="h-10 rounded-md border border-border bg-muted px-3 py-2 text-sm">
-            </div>
-            <div class="flex flex-col gap-1 md:col-span-2">
-              <label class="text-sm font-medium">Motivo <span class="text-muted-foreground">(opcional)</span></label>
-              <textarea [(ngModel)]="form.reason" rows="3" placeholder="Añade un motivo..."
-                class="rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none">
-              </textarea>
-            </div>
-          </div>
-          <div class="flex gap-2 mt-4">
-            <app-button variant="primary" (click)="submitRequest()" [disabled]="submitting">
-              <lucide-icon *ngIf="submitting" name="loader-2" size="16" class="mr-2 animate-spin"></lucide-icon>
-              Enviar Solicitud
-            </app-button>
-            <app-button variant="outline" (click)="showForm = false">Cancelar</app-button>
-          </div>
-          <div *ngIf="successMsg" class="mt-3 p-3 rounded-md bg-green-500/10 text-green-600 text-sm border border-green-500/30">
-            ✅ {{ successMsg }}
-          </div>
-        </app-card-content>
-      </app-card>
-
+            @if (successMsg) {
+              <div class="mt-3 p-3 rounded-md bg-green-500/10 text-green-600 text-sm border border-green-500/30">
+                ✅ {{ successMsg }}
+              </div>
+            }
+          </app-card-content>
+        </app-card>
+      }
+    
       <!-- My Leave History -->
       <app-card>
         <app-card-header>
           <app-card-title>Mis Solicitudes de Ausencia</app-card-title>
         </app-card-header>
         <app-card-content class="p-0">
-          <div *ngIf="loading" class="p-8 text-center">
-            <div class="animate-spin h-6 w-6 rounded-full border-b-2 border-primary mx-auto"></div>
-          </div>
-          <div *ngIf="!loading && leaves.length === 0" class="p-8 text-center text-muted-foreground italic">
-            Aún no tienes solicitudes de ausencia.
-          </div>
-          <div *ngFor="let leave of leaves" class="p-4 border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg flex items-center justify-center" [ngClass]="leaveTypeColor(leave.leaveType).bg">
-                  <lucide-icon name="calendar" size="18" [ngClass]="leaveTypeColor(leave.leaveType).text"></lucide-icon>
-                </div>
-                <div>
-                  <p class="font-semibold text-sm">{{ translateLeaveType(leave.leaveType) }}</p>
-                  <p class="text-xs text-muted-foreground">
-                    {{ leave.startDate | date:'MMM d' }} – {{ leave.endDate | date:'MMM d, y' }}
-                    • {{ leave.daysRequested }} {{ leave.daysRequested !== 1 ? 'días' : 'día' }}
-                  </p>
-                </div>
-              </div>
-              <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                    [ngClass]="statusClass(leave.status)">
-                {{ leave.status }}
-              </span>
+          @if (loading) {
+            <div class="p-8 text-center">
+              <div class="animate-spin h-6 w-6 rounded-full border-b-2 border-primary mx-auto"></div>
             </div>
-            <p *ngIf="leave.reason" class="text-xs text-muted-foreground mt-2 ml-13 pl-13">{{ leave.reason }}</p>
-          </div>
+          }
+          @if (!loading && leaves.length === 0) {
+            <div class="p-8 text-center text-muted-foreground italic">
+              Aún no tienes solicitudes de ausencia.
+            </div>
+          }
+          @for (leave of leaves; track leave) {
+            <div class="p-4 border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg flex items-center justify-center" [ngClass]="leaveTypeColor(leave.leaveType).bg">
+                    <lucide-icon name="calendar" size="18" [ngClass]="leaveTypeColor(leave.leaveType).text"></lucide-icon>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-sm">{{ translateLeaveType(leave.leaveType) }}</p>
+                    <p class="text-xs text-muted-foreground">
+                      {{ leave.startDate | date:'MMM d' }} – {{ leave.endDate | date:'MMM d, y' }}
+                      • {{ leave.daysRequested }} {{ leave.daysRequested !== 1 ? 'días' : 'día' }}
+                    </p>
+                  </div>
+                </div>
+                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  [ngClass]="statusClass(leave.status)">
+                  {{ leave.status }}
+                </span>
+              </div>
+              @if (leave.reason) {
+                <p class="text-xs text-muted-foreground mt-2 ml-13 pl-13">{{ leave.reason }}</p>
+              }
+            </div>
+          }
         </app-card-content>
       </app-card>
     </div>
-  `,
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LeavesDashboardComponent implements OnInit {

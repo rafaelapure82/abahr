@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, ChangeDetectionStrategy, signal, computed, linkedSignal, resource } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { EmployeeService, Employee, Document, DocumentType, EmployeeQuery } from '../../../core/services/employee.service';
@@ -17,7 +17,6 @@ interface Tab {
   selector: 'app-employee-form',
   standalone: true,
   imports: [
-    CommonModule,
     RouterLink,
     FormsModule,
     CardComponent,
@@ -26,7 +25,7 @@ interface Tab {
     CardContentComponent,
     ButtonComponent,
     LucideAngularModule
-  ],
+],
   template: `
     <div class="space-y-6">
       <!-- Header -->

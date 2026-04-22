@@ -5,7 +5,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { AppComponent } from './app/app.component';
 import { APP_ROUTES } from './app/app.routes';
 import { environment } from './environments/environment';
-import { enableProdMode, provideExperimentalZonelessChangeDetection, importProvidersFrom } from '@angular/core';
+import { enableProdMode, provideExperimentalZonelessChangeDetection, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
 
 import { authInterceptor } from './app/core/auth/auth.interceptor';
 import { RouteReuseStrategy } from '@angular/router';
@@ -28,7 +28,7 @@ if (environment.production) {
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideExperimentalZonelessChangeDetection(),
+    provideZoneChangeDetection(),provideExperimentalZonelessChangeDetection(),
     provideRouter(APP_ROUTES, withHashLocation()),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAnimations(),

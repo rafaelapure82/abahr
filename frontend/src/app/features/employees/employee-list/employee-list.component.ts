@@ -64,8 +64,12 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
         </div>
         <div class="flex gap-2">
           <app-button variant="outline" (click)="exportExcel()" [disabled]="exporting">
-            <lucide-icon *ngIf="exporting" name="loader-2" size="18" class="mr-2 animate-spin"></lucide-icon>
-            <lucide-icon *ngIf="!exporting" name="download" size="18" class="mr-2"></lucide-icon> 
+            @if (exporting) {
+              <lucide-icon name="loader-2" size="18" class="mr-2 animate-spin"></lucide-icon>
+            }
+            @if (!exporting) {
+              <lucide-icon name="download" size="18" class="mr-2"></lucide-icon>
+            }
             Exportar Excel
           </app-button>
           <app-button variant="primary" routerLink="/employees/new">
@@ -73,7 +77,7 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
           </app-button>
         </div>
       </div>
-
+    
       <!-- Filters Card -->
       <app-card class="bg-slate-900/50 border-slate-800 backdrop-blur-xl">
         <app-card-content class="p-4">
@@ -87,15 +91,15 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
                 (ngModelChange)="onSearchChange()"
                 placeholder="Buscar por nombre, correo o código..."
                 class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-800 bg-slate-950 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-              />
+                />
             </div>
-
+    
             <!-- Status Filter -->
             <select
               [(ngModel)]="filters.status"
               (ngModelChange)="fetchEmployees()"
               class="px-3 py-2 rounded-lg border border-slate-800 bg-slate-950 text-slate-200 text-sm min-w-[140px]"
-            >
+              >
               <option value="">Todos los Estados</option>
               <option value="ACTIVE">Activo</option>
               <option value="PROBATION">Prueba</option>
@@ -103,15 +107,17 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
               <option value="SUSPENDED">Suspendido</option>
               <option value="TERMINATED">Retirado</option>
             </select>
-
+    
             <!-- Department Filter -->
             <select
               [(ngModel)]="filters.departmentId"
               (ngModelChange)="fetchEmployees()"
               class="px-3 py-2 rounded-lg border border-slate-800 bg-slate-950 text-slate-200 text-sm min-w-[160px]"
-            >
+              >
               <option value="">Todos los Departamentos</option>
-              <option *ngFor="let dept of departments" [value]="dept.id">{{ dept.name }}</option>
+              @for (dept of departments; track dept) {
+                <option [value]="dept.id">{{ dept.name }}</option>
+              }
             </select>
           </div>
         </app-card-content>
@@ -119,16 +125,20 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
       <app-card class="bg-slate-900/50 border-slate-800 backdrop-blur-xl overflow-hidden">
         <div class="overflow-x-auto">
           <table mat-table [dataSource]="dataSource" matSort class="w-full">
-            
+    
             <!-- Employee Column -->
             <ng-container matColumnDef="employee">
               <th mat-header-cell *matHeaderCellDef mat-sort-header> Empleado </th>
               <td mat-cell *matCellDef="let emp">
                 <div class="flex items-center gap-3">
-                  <img *ngIf="emp.avatarUrl" [src]="emp.avatarUrl" [alt]="emp.firstName" class="w-8 h-8 rounded-full object-cover border border-slate-700" />
-                  <div *ngIf="!emp.avatarUrl" class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-[10px] uppercase border border-indigo-500/30">
-                    {{ emp.firstName[0] }}{{ emp.lastName[0] }}
-                  </div>
+                  @if (emp.avatarUrl) {
+                    <img [src]="emp.avatarUrl" [alt]="emp.firstName" class="w-8 h-8 rounded-full object-cover border border-slate-700" />
+                  }
+                  @if (!emp.avatarUrl) {
+                    <div class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-[10px] uppercase border border-indigo-500/30">
+                      {{ emp.firstName[0] }}{{ emp.lastName[0] }}
+                    </div>
+                  }
                   <div>
                     <p class="font-medium text-slate-200 mb-0 leading-tight">{{ emp.firstName }} {{ emp.lastName }}</p>
                     <p class="text-[10px] text-slate-500 mb-0">{{ emp.workEmail || emp.email }}</p>
@@ -136,7 +146,7 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
                 </div>
               </td>
             </ng-container>
-
+    
             <!-- Position Column -->
             <ng-container matColumnDef="jobTitle">
               <th mat-header-cell *matHeaderCellDef mat-sort-header> Cargo </th>
@@ -145,7 +155,7 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
                 <p class="text-[10px] text-slate-500 mb-0">{{ emp.employeeCode }}</p>
               </td>
             </ng-container>
-
+    
             <!-- Department Column -->
             <ng-container matColumnDef="department">
               <th mat-header-cell *matHeaderCellDef> Departamento </th>
@@ -153,12 +163,12 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
                 {{ emp.department?.name || 'Sin asignar' }}
               </td>
             </ng-container>
-
+    
             <!-- Status Column -->
             <ng-container matColumnDef="status">
               <th mat-header-cell *matHeaderCellDef mat-sort-header> Estado </th>
               <td mat-cell *matCellDef="let emp">
-                <span 
+                <span
                   class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
                   [ngClass]="{
                     'bg-green-500/10 text-green-400 border border-green-500/20': emp.status === 'ACTIVE',
@@ -167,12 +177,12 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
                     'bg-red-500/10 text-red-400 border border-red-500/20': emp.status === 'SUSPENDED',
                     'bg-slate-500/10 text-slate-400 border border-slate-500/20': emp.status === 'TERMINATED'
                   }"
-                >
+                  >
                   {{ emp.status }}
                 </span>
               </td>
             </ng-container>
-
+    
             <!-- Hire Date Column -->
             <ng-container matColumnDef="hireDate">
               <th mat-header-cell *matHeaderCellDef mat-sort-header> Ingreso </th>
@@ -180,7 +190,7 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
                 {{ emp.hireDate | date:'mediumDate' }}
               </td>
             </ng-container>
-
+    
             <!-- Actions Column -->
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef class="text-end"> Acciones </th>
@@ -198,21 +208,21 @@ type SortField = 'firstName' | 'lastName' | 'hireDate' | 'jobTitle' | 'createdAt
                 </div>
               </td>
             </ng-container>
-
+    
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
           </table>
         </div>
-
+    
         <mat-paginator [length]="total"
-                       [pageSize]="pageSize"
-                       [pageSizeOptions]="[5, 10, 20, 50]"
-                       (page)="onPageChange($event)"
-                       class="border-t border-slate-800">
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[5, 10, 20, 50]"
+          (page)="onPageChange($event)"
+          class="border-t border-slate-800">
         </mat-paginator>
       </app-card>
     </div>
-  `
+    `
 })
 export class EmployeeListComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);

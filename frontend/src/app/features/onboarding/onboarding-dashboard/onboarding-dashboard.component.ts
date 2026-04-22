@@ -23,80 +23,88 @@ import { LucideAngularModule } from 'lucide-angular';
           </app-button>
         </div>
       </div>
-
+    
       <!-- Status Stats -->
       <div class="grid md:grid-cols-4 gap-4">
-        <app-card *ngFor="let s of stats">
-          <app-card-content class="flex items-center gap-4 p-6">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" [ngClass]="s.bg">
-              <lucide-icon [name]="s.icon" size="20" [ngClass]="s.color"></lucide-icon>
-            </div>
-            <div>
-              <p class="text-xs text-muted-foreground">{{ s.label }}</p>
-              <p class="text-xl font-bold">{{ s.value }}</p>
-            </div>
-          </app-card-content>
-        </app-card>
-      </div>
-
-      <!-- Onboarding Cards -->
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div *ngIf="loading" class="col-span-full flex justify-center p-12">
-          <div class="animate-spin h-8 w-8 rounded-full border-b-2 border-primary"></div>
-        </div>
-        <div *ngIf="!loading && onboardings.length === 0" class="col-span-full text-center p-12 text-muted-foreground italic">
-          No hay procesos de ingreso activos.
-        </div>
-
-        <div *ngFor="let ob of onboardings"
-             class="group cursor-pointer" [routerLink]="['/onboarding', ob.id]">
-          <app-card class="hover:border-primary/50 hover:shadow-md transition-all duration-200">
-            <app-card-content class="p-5">
-              <!-- Employee info -->
-              <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                  {{ ob.employee?.firstName?.[0] }}{{ ob.employee?.lastName?.[0] }}
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p class="font-semibold truncate">{{ ob.employee?.firstName }} {{ ob.employee?.lastName }}</p>
-                  <p class="text-xs text-muted-foreground truncate">{{ ob.employee?.jobTitle }}</p>
-                </div>
-                <span class="flex-shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
-                      [ngClass]="statusClass(ob.status)">
-                  {{ ob.status | titlecase }}
-                </span>
+        @for (s of stats; track s) {
+          <app-card>
+            <app-card-content class="flex items-center gap-4 p-6">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center" [ngClass]="s.bg">
+                <lucide-icon [name]="s.icon" size="20" [ngClass]="s.color"></lucide-icon>
               </div>
-
-              <!-- Progress Bar -->
-              <div class="mb-3">
-                <div class="flex justify-between text-xs text-muted-foreground mb-1">
-                  <span>Progreso</span>
-                  <span>{{ progress(ob) }}%</span>
-                </div>
-                <div class="h-2 bg-muted rounded-full overflow-hidden">
-                  <div class="h-full bg-primary transition-all duration-500 rounded-full"
-                       [style.width.%]="progress(ob)">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Info -->
-              <div class="flex justify-between text-xs text-muted-foreground">
-                <span>
-                  <lucide-icon name="check-square" size="12" class="inline mr-1"></lucide-icon>
-                  {{ completedTasks(ob) }}/{{ totalTasks(ob) }} tareas
-                </span>
-                <span *ngIf="ob.targetDate">
-                  <lucide-icon name="calendar" size="12" class="inline mr-1"></lucide-icon>
-                  Vence {{ ob.targetDate | date:'MMM d' }}
-                </span>
+              <div>
+                <p class="text-xs text-muted-foreground">{{ s.label }}</p>
+                <p class="text-xl font-bold">{{ s.value }}</p>
               </div>
             </app-card-content>
           </app-card>
-        </div>
+        }
+      </div>
+    
+      <!-- Onboarding Cards -->
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        @if (loading) {
+          <div class="col-span-full flex justify-center p-12">
+            <div class="animate-spin h-8 w-8 rounded-full border-b-2 border-primary"></div>
+          </div>
+        }
+        @if (!loading && onboardings.length === 0) {
+          <div class="col-span-full text-center p-12 text-muted-foreground italic">
+            No hay procesos de ingreso activos.
+          </div>
+        }
+    
+        @for (ob of onboardings; track ob) {
+          <div
+            class="group cursor-pointer" [routerLink]="['/onboarding', ob.id]">
+            <app-card class="hover:border-primary/50 hover:shadow-md transition-all duration-200">
+              <app-card-content class="p-5">
+                <!-- Employee info -->
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    {{ ob.employee?.firstName?.[0] }}{{ ob.employee?.lastName?.[0] }}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="font-semibold truncate">{{ ob.employee?.firstName }} {{ ob.employee?.lastName }}</p>
+                    <p class="text-xs text-muted-foreground truncate">{{ ob.employee?.jobTitle }}</p>
+                  </div>
+                  <span class="flex-shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
+                    [ngClass]="statusClass(ob.status)">
+                    {{ ob.status | titlecase }}
+                  </span>
+                </div>
+                <!-- Progress Bar -->
+                <div class="mb-3">
+                  <div class="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span>Progreso</span>
+                    <span>{{ progress(ob) }}%</span>
+                  </div>
+                  <div class="h-2 bg-muted rounded-full overflow-hidden">
+                    <div class="h-full bg-primary transition-all duration-500 rounded-full"
+                      [style.width.%]="progress(ob)">
+                    </div>
+                  </div>
+                </div>
+                <!-- Info -->
+                <div class="flex justify-between text-xs text-muted-foreground">
+                  <span>
+                    <lucide-icon name="check-square" size="12" class="inline mr-1"></lucide-icon>
+                    {{ completedTasks(ob) }}/{{ totalTasks(ob) }} tareas
+                  </span>
+                  @if (ob.targetDate) {
+                    <span>
+                      <lucide-icon name="calendar" size="12" class="inline mr-1"></lucide-icon>
+                      Vence {{ ob.targetDate | date:'MMM d' }}
+                    </span>
+                  }
+                </div>
+              </app-card-content>
+            </app-card>
+          </div>
+        }
       </div>
     </div>
-  `,
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OnboardingDashboardComponent implements OnInit {

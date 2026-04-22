@@ -15,7 +15,7 @@ import { LucideAngularModule } from 'lucide-angular';
         <h2 class="text-3xl font-bold tracking-tight">Registros de Asistencia</h2>
         <p class="text-muted-foreground">Vista administrativa de la asistencia de todos los empleados.</p>
       </div>
-
+    
       <!-- Filters -->
       <app-card>
         <app-card-content class="p-4">
@@ -43,7 +43,7 @@ import { LucideAngularModule } from 'lucide-angular';
           </div>
         </app-card-content>
       </app-card>
-
+    
       <!-- Table -->
       <app-card>
         <app-card-header>
@@ -63,42 +63,52 @@ import { LucideAngularModule } from 'lucide-angular';
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="loading" class="border-b">
-                <td colspan="7" class="p-8 text-center">
-                  <div class="animate-spin h-6 w-6 rounded-full border-b-2 border-primary mx-auto"></div>
-                </td>
-              </tr>
-              <tr *ngIf="!loading && records.length === 0">
-                <td colspan="7" class="p-8 text-center text-muted-foreground italic">No se encontraron registros.</td>
-              </tr>
-              <tr *ngFor="let r of records" class="border-b border-border hover:bg-muted/20 transition-colors">
-                <td class="p-4 align-middle">
-                  <div>
-                    <p class="font-medium">{{ r.employee?.displayName || r.employee?.firstName + ' ' + r.employee?.lastName }}</p>
-                    <p class="text-xs text-muted-foreground">{{ r.employee?.department?.name }}</p>
-                  </div>
-                </td>
-                <td class="p-4 align-middle text-sm">{{ r.date | date:'MMM d, y' }}</td>
-                <td class="p-4 align-middle font-mono text-sm">{{ r.checkIn ? (r.checkIn | date:'hh:mm a') : '—' }}</td>
-                <td class="p-4 align-middle font-mono text-sm">{{ r.checkOut ? (r.checkOut | date:'hh:mm a') : '—' }}</td>
-                <td class="p-4 align-middle font-medium">{{ r.hoursWorked ? r.hoursWorked + 'h' : '—' }}</td>
-                <td class="p-4 align-middle">
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                        [ngClass]="statusClass(r.status)">
-                    {{ r.status }}
-                  </span>
-                </td>
-                <td class="p-4 align-middle">
-                  <lucide-icon *ngIf="r.isRemote" name="wifi" size="16" class="text-blue-500"></lucide-icon>
-                  <lucide-icon *ngIf="!r.isRemote" name="building-2" size="16" class="text-muted-foreground"></lucide-icon>
-                </td>
-              </tr>
+              @if (loading) {
+                <tr class="border-b">
+                  <td colspan="7" class="p-8 text-center">
+                    <div class="animate-spin h-6 w-6 rounded-full border-b-2 border-primary mx-auto"></div>
+                  </td>
+                </tr>
+              }
+              @if (!loading && records.length === 0) {
+                <tr>
+                  <td colspan="7" class="p-8 text-center text-muted-foreground italic">No se encontraron registros.</td>
+                </tr>
+              }
+              @for (r of records; track r) {
+                <tr class="border-b border-border hover:bg-muted/20 transition-colors">
+                  <td class="p-4 align-middle">
+                    <div>
+                      <p class="font-medium">{{ r.employee?.displayName || r.employee?.firstName + ' ' + r.employee?.lastName }}</p>
+                      <p class="text-xs text-muted-foreground">{{ r.employee?.department?.name }}</p>
+                    </div>
+                  </td>
+                  <td class="p-4 align-middle text-sm">{{ r.date | date:'MMM d, y' }}</td>
+                  <td class="p-4 align-middle font-mono text-sm">{{ r.checkIn ? (r.checkIn | date:'hh:mm a') : '—' }}</td>
+                  <td class="p-4 align-middle font-mono text-sm">{{ r.checkOut ? (r.checkOut | date:'hh:mm a') : '—' }}</td>
+                  <td class="p-4 align-middle font-medium">{{ r.hoursWorked ? r.hoursWorked + 'h' : '—' }}</td>
+                  <td class="p-4 align-middle">
+                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                      [ngClass]="statusClass(r.status)">
+                      {{ r.status }}
+                    </span>
+                  </td>
+                  <td class="p-4 align-middle">
+                    @if (r.isRemote) {
+                      <lucide-icon name="wifi" size="16" class="text-blue-500"></lucide-icon>
+                    }
+                    @if (!r.isRemote) {
+                      <lucide-icon name="building-2" size="16" class="text-muted-foreground"></lucide-icon>
+                    }
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </app-card-content>
       </app-card>
     </div>
-  `
+    `
 })
 export class AttendanceListComponent implements OnInit {
   private route = inject(ActivatedRoute);

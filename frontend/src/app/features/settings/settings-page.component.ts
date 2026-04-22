@@ -1,10 +1,10 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
     selector: 'app-settings-page',
-    imports: [CommonModule, LucideAngularModule],
+    imports: [LucideAngularModule],
     template: `
     <div class="max-w-4xl mx-auto space-y-8 animate-fadeIn">
       <!-- Header -->

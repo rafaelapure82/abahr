@@ -1,5 +1,5 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
@@ -9,15 +9,14 @@ import { LucideAngularModule, UserPlus, Mail, Lock, User, Briefcase, Building } 
 @Component({
     selector: 'app-register',
     imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        ButtonComponent,
-        CardComponent,
-        CardHeaderComponent,
-        CardTitleComponent,
-        CardContentComponent,
-        LucideAngularModule
-    ],
+    ReactiveFormsModule,
+    ButtonComponent,
+    CardComponent,
+    CardHeaderComponent,
+    CardTitleComponent,
+    CardContentComponent,
+    LucideAngularModule
+],
     template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">

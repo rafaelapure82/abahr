@@ -18,7 +18,7 @@ import { map } from 'rxjs/operators';
       <!-- Decorative Background elements -->
       <div class="absolute top-1/4 -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none"></div>
       <div class="absolute bottom-1/4 -right-20 w-80 h-80 bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none"></div>
-
+    
       <div class="w-full max-w-2xl relative z-10">
         <!-- Header -->
         <div class="text-center mb-10 space-y-4">
@@ -28,7 +28,7 @@ import { map } from 'rxjs/operators';
           <h2 class="text-4xl font-black tracking-tight text-white">Iniciar Periodo de Nómina</h2>
           <p class="text-slate-400 text-lg">Configure los parámetros para la ejecución automatizada.</p>
         </div>
-
+    
         <!-- Form Glass Card -->
         <div class="glass-card p-10 rounded-[40px] border border-white/10 shadow-2xl space-y-8">
           <div class="grid md:grid-cols-2 gap-8">
@@ -39,89 +39,97 @@ import { map } from 'rxjs/operators';
               </label>
               <input type="date" [(ngModel)]="form.periodStart"
                 class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 px-6 text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white/10 transition-all font-medium">
-            </div>
-
-            <!-- Period End -->
-            <div class="space-y-2">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <lucide-icon name="calendar-check" size="12"></lucide-icon> Fin del Periodo
-              </label>
-              <input type="date" [(ngModel)]="form.periodEnd"
-                class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 px-6 text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white/10 transition-all font-medium">
-            </div>
-
-            <!-- Pay Date -->
-            <div class="space-y-2">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <lucide-icon name="dollar-sign" size="12"></lucide-icon> Fecha Programada de Pago
-              </label>
-              <input type="date" [(ngModel)]="form.payDate"
-                class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 px-6 text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white/10 transition-all font-medium">
-            </div>
-
-            <!-- Frequency -->
-            <div class="space-y-2">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <lucide-icon name="refresh-cw" size="12"></lucide-icon> Frecuencia de Ejecución
-              </label>
-              <select [(ngModel)]="form.frequency"
-                class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 px-6 text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white/10 transition-all font-medium appearance-none">
-                <option value="MONTHLY">Mensual</option>
-                <option value="BIWEEKLY">Quincenal</option>
-                <option value="WEEKLY">Semanal</option>
-                <option value="SEMI_MONTHLY">Semimensual</option>
-              </select>
-            </div>
-
-            <!-- Department Selector -->
-            <div class="space-y-2 md:col-span-2">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <lucide-icon name="users" size="12"></lucide-icon> Segmentación (Departamento)
-              </label>
-              <select [(ngModel)]="form.departmentId"
-                class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 px-6 text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white/10 transition-all font-medium appearance-none">
-                <option value="">Ejecución Global (Toda la empresa)</option>
-                <option *ngFor="let dept of departments$ | async" [value]="dept.id">
-                  {{ dept.name }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Error Feedback -->
-          <div *ngIf="errorMsg" class="p-6 rounded-[24px] bg-red-600/10 border border-red-600/30 flex items-center gap-4 text-red-400 animate-shake">
-            <lucide-icon name="alert-circle" size="24"></lucide-icon>
-            <p class="font-bold">{{ errorMsg }}</p>
-          </div>
-
-          <!-- Actions -->
-          <div class="flex flex-col md:flex-row gap-4 pt-4">
-            <button (click)="submit()" [disabled]="submitting" 
+              </div>
+    
+              <!-- Period End -->
+              <div class="space-y-2">
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <lucide-icon name="calendar-check" size="12"></lucide-icon> Fin del Periodo
+                </label>
+                <input type="date" [(ngModel)]="form.periodEnd"
+                  class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 px-6 text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white/10 transition-all font-medium">
+                </div>
+    
+                <!-- Pay Date -->
+                <div class="space-y-2">
+                  <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <lucide-icon name="dollar-sign" size="12"></lucide-icon> Fecha Programada de Pago
+                  </label>
+                  <input type="date" [(ngModel)]="form.payDate"
+                    class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 px-6 text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white/10 transition-all font-medium">
+                  </div>
+    
+                  <!-- Frequency -->
+                  <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                      <lucide-icon name="refresh-cw" size="12"></lucide-icon> Frecuencia de Ejecución
+                    </label>
+                    <select [(ngModel)]="form.frequency"
+                      class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 px-6 text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white/10 transition-all font-medium appearance-none">
+                      <option value="MONTHLY">Mensual</option>
+                      <option value="BIWEEKLY">Quincenal</option>
+                      <option value="WEEKLY">Semanal</option>
+                      <option value="SEMI_MONTHLY">Semimensual</option>
+                    </select>
+                  </div>
+    
+                  <!-- Department Selector -->
+                  <div class="space-y-2 md:col-span-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                      <lucide-icon name="users" size="12"></lucide-icon> Segmentación (Departamento)
+                    </label>
+                    <select [(ngModel)]="form.departmentId"
+                      class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 px-6 text-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white/10 transition-all font-medium appearance-none">
+                      <option value="">Ejecución Global (Toda la empresa)</option>
+                      @for (dept of departments$ | async; track dept) {
+                        <option [value]="dept.id">
+                          {{ dept.name }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                </div>
+    
+                <!-- Error Feedback -->
+                @if (errorMsg) {
+                  <div class="p-6 rounded-[24px] bg-red-600/10 border border-red-600/30 flex items-center gap-4 text-red-400 animate-shake">
+                    <lucide-icon name="alert-circle" size="24"></lucide-icon>
+                    <p class="font-bold">{{ errorMsg }}</p>
+                  </div>
+                }
+    
+                <!-- Actions -->
+                <div class="flex flex-col md:flex-row gap-4 pt-4">
+                  <button (click)="submit()" [disabled]="submitting"
                     class="flex-1 h-16 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg shadow-xl shadow-indigo-600/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95">
-              <lucide-icon *ngIf="submitting" name="loader-2" size="24" class="animate-spin"></lucide-icon>
-              <lucide-icon *ngIf="!submitting" name="rocket" size="24"></lucide-icon>
-              {{ submitting ? 'INICIANDO PROCESO...' : 'LANZAR EJECUCIÓN' }}
-            </button>
-            <button routerLink="/payroll" class="h-16 px-8 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold transition-all">
-              Cancelar
-            </button>
+                    @if (submitting) {
+                      <lucide-icon name="loader-2" size="24" class="animate-spin"></lucide-icon>
+                    }
+                    @if (!submitting) {
+                      <lucide-icon name="rocket" size="24"></lucide-icon>
+                    }
+                    {{ submitting ? 'INICIANDO PROCESO...' : 'LANZAR EJECUCIÓN' }}
+                  </button>
+                  <button routerLink="/payroll" class="h-16 px-8 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold transition-all">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <style>
-      .glass-card {
-        background: rgba(30, 41, 59, 0.4);
-        backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      }
-      @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes shake {
+    
+          <style>
+            .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          }
+          @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shake {
         0%, 100% { transform: translateX(0); }
         25% { transform: translateX(-5px); }
         75% { transform: translateX(5px); }
@@ -129,7 +137,7 @@ import { map } from 'rxjs/operators';
       .animate-fade-in { animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
     </style>
-  `,
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PayrollGenerateComponent {
