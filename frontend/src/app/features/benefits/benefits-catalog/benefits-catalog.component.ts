@@ -22,21 +22,21 @@ import { LucideAngularModule, Gift, Heart, Coffee, ShieldCheck } from 'lucide-an
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-3xl font-bold tracking-tight">Benefits Catalog</h2>
-          <p class="text-muted-foreground">Explore and manage company-provided benefits and perks.</p>
+          <h2 class="text-3xl font-bold tracking-tight">Catálogo de Beneficios</h2>
+          <p class="text-muted-foreground">Explora y gestiona los beneficios y ventajas proporcionados por la empresa.</p>
         </div>
         <app-button variant="outline">
-          <lucide-icon name="shield-check" size="18" class="mr-2"></lucide-icon> My Enrollments
+          <lucide-icon name="shield-check" size="18" class="mr-2"></lucide-icon> Mis Inscripciones
         </app-button>
       </div>
 
       <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <div *ngIf="loading" class="col-span-full py-12 text-center text-muted-foreground">
            <div class="animate-spin h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-           Loading available plans...
+           Cargando planes disponibles...
         </div>
         <div *ngIf="!loading && benefitPlans.length === 0" class="col-span-full py-12 text-center text-muted-foreground">
-           No benefit plans available at this time.
+           No hay planes de beneficios disponibles en este momento.
         </div>
         <app-card *ngFor="let plan of benefitPlans" class="flex flex-col">
           <app-card-header>
@@ -61,7 +61,7 @@ import { LucideAngularModule, Gift, Heart, Coffee, ShieldCheck } from 'lucide-an
           </app-card-content>
           <app-card-footer class="border-t border-border mt-4 pt-4">
             <app-button variant="primary" className="w-full" (click)="enroll(plan.id)">
-              Enroll Now
+              Inscribirse Ahora
             </app-button>
           </app-card-footer>
         </app-card>

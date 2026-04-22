@@ -1,12 +1,14 @@
 import { Routes } from '@angular/router';
+import { PerformanceDashboardComponent } from './performance-dashboard/performance-dashboard.component';
+import { ReviewDetailComponent } from './review-detail/review-detail.component';
 
 export const PERFORMANCE_ROUTES: Routes = [
   {
     path: '',
-    loadComponent: () => import('./performance-dashboard/performance-dashboard.component').then(m => m.PerformanceDashboardComponent)
+    component: PerformanceDashboardComponent
   },
   {
     path: 'reviews/:id',
-    loadComponent: () => import('./review-detail/review-detail.component').then(m => m.ReviewDetailComponent)
+    component: ReviewDetailComponent
   }
 ];

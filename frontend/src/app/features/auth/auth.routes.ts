@@ -1,20 +1,23 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from '../../core/auth/auth.guard';
+import { LoginComponent } from './login/login.component';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
+import { RegisterComponent } from './register/register.component';
 
 export const AUTH_ROUTES: Routes = [
   {
     path: 'login',
-    loadComponent: () => import('./login/login.component').then(m => m.LoginComponent)
+    component: LoginComponent
   },
   {
     path: 'forgot-password',
-    loadComponent: () => import('./forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
+    component: ForgotPasswordComponent
   },
   {
     path: 'register',
     canActivate: [roleGuard],
     data: { roles: ['SUPER_ADMIN', 'HR_ADMIN'] },
-    loadComponent: () => import('./register/register.component').then(m => m.RegisterComponent)
+    component: RegisterComponent
   },
   {
     path: '',

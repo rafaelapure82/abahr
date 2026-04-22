@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, tap, catchError, throwError, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -8,6 +9,7 @@ export interface User {
   email: string;
   isActive: boolean;
   roles: any[];
+  employee?: { id: string };
 }
 
 export interface AuthResponse {
@@ -16,12 +18,19 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/authyusers`;
+  private router = inject(Router);
+  private apiUrl = `${environment.apiUrl}/auth`;
   
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
@@ -49,7 +58,8 @@ export class AuthService {
   }
 
   login(credentials: any): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
+    return this.http.post<ApiResponse<AuthResponse>>(`${this.apiUrl}/login`, credentials).pipe(
+      map(res => res.data),
       tap(res => this.setSession(res))
     );
   }
@@ -66,13 +76,15 @@ export class AuthService {
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
     this.permissionsSubject.next([]);
+    this.router.navigate(['/auth/login']);
   }
 
   refreshToken(): Observable<any> {
     const refreshToken = localStorage.getItem('refresh_token');
     if (!refreshToken) return throwError(() => new Error('No refresh token available'));
 
-    return this.http.post<any>(`${this.apiUrl}/refresh`, { refreshToken }).pipe(
+    return this.http.post<ApiResponse<{ accessToken: string }>>(`${this.apiUrl}/refresh`, { refreshToken }).pipe(
+      map(res => res.data),
       tap(res => {
         localStorage.setItem('access_token', res.accessToken);
       }),
@@ -94,8 +106,8 @@ export class AuthService {
   }
 
   private loadPermissions() {
-    this.http.get<{ permissions: string[] }>(`${this.apiUrl}/me/permissions`).subscribe({
-      next: (res) => this.permissionsSubject.next(res.permissions),
+    this.http.get<ApiResponse<{ permissions: string[] }>>(`${this.apiUrl}/me/permissions`).subscribe({
+      next: (res) => this.permissionsSubject.next(res.data.permissions),
       error: () => this.permissionsSubject.next([])
     });
   }

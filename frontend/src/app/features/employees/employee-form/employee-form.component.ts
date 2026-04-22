@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -34,7 +34,7 @@ interface Tab {
         <a routerLink="/employees" class="flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
           <lucide-icon name="chevron-left" size="16" class="mr-1"></lucide-icon> Back to Directory
         </a>
-        <h1 class="text-2xl font-bold">{{ isEditMode() ? 'Edit Employee' : 'Create New Employee' }}</h1>
+        <h1 class="text-2xl font-bold">{{ isEditMode ? 'Edit Employee' : 'Create New Employee' }}</h1>
         <div></div>
       </div>
 
@@ -42,12 +42,12 @@ interface Tab {
       <div class="border-b border-border">
         <nav class="flex space-x-8" aria-label="Tabs">
           <button *ngFor="let tab of tabs; let i = index"
-                  (click)="activeTab.set(tab.id)"
+                  (click)="setActiveTab(tab.id)"
                   class="py-4 px-1 border-b-2 font-medium text-sm transition-colors relative"
-                  [class.border-primary]="activeTab() === tab.id"
-                  [class.text-primary]="activeTab() === tab.id"
-                  [class.border-transparent]="activeTab() !== tab.id"
-                  [class.text-muted-foreground]="activeTab() !== tab.id">
+                  [class.border-primary]="activeTab === tab.id"
+                  [class.text-primary]="activeTab === tab.id"
+                  [class.border-transparent]="activeTab !== tab.id"
+                  [class.text-muted-foreground]="activeTab !== tab.id">
             <lucide-icon [name]="tab.icon" size="16" class="inline mr-2"></lucide-icon>
             {{ tab.label }}
             <span *ngIf="hasError(tab.id)" class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
@@ -60,7 +60,7 @@ interface Tab {
         <app-card>
           <app-card-content class="p-6">
             <!-- Personal Data Tab -->
-            <div *ngIf="activeTab() === 'personal'" class="space-y-6">
+            <div *ngIf="activeTab === 'personal'" class="space-y-6">
               <div class="grid gap-6 md:grid-cols-2">
                 <div>
                   <label class="text-sm font-medium block mb-1">First Name *</label>
@@ -118,7 +118,7 @@ interface Tab {
             </div>
 
             <!-- Work Data Tab -->
-            <div *ngIf="activeTab() === 'work'" class="space-y-6">
+            <div *ngIf="activeTab === 'work'" class="space-y-6">
               <div class="grid gap-6 md:grid-cols-2">
                 <div>
                   <label class="text-sm font-medium block mb-1">Job Title *</label>
@@ -133,7 +133,7 @@ interface Tab {
                           class="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                           [class.border-red-500]="errors.departmentId">
                     <option value="">Select Department</option>
-                    <option *ngFor="let dept of departments()" [value]="dept.id">{{ dept.name }}</option>
+                    <option *ngFor="let dept of departments" [value]="dept.id">{{ dept.name }}</option>
                   </select>
                   <p *ngIf="errors.departmentId" class="text-xs text-red-500 mt-1">{{ errors.departmentId }}</p>
                 </div>
@@ -142,7 +142,7 @@ interface Tab {
                   <select [(ngModel)]="formData.managerId" name="managerId"
                           class="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary">
                     <option value="">No Manager</option>
-                    <option *ngFor="let mgr of managers()" [value]="mgr.id">{{ mgr.firstName }} {{ mgr.lastName }}</option>
+                    <option *ngFor="let mgr of managers" [value]="mgr.id">{{ mgr.firstName }} {{ mgr.lastName }}</option>
                   </select>
                 </div>
                 <div>
@@ -205,7 +205,7 @@ interface Tab {
             </div>
 
             <!-- Contact Tab -->
-            <div *ngIf="activeTab() === 'contact'" class="space-y-6">
+            <div *ngIf="activeTab === 'contact'" class="space-y-6">
               <div>
                 <h4 class="font-medium mb-4">Work Contact</h4>
                 <div class="grid gap-6 md:grid-cols-2">
@@ -301,7 +301,7 @@ interface Tab {
             </div>
 
             <!-- Documents Tab -->
-            <div *ngIf="activeTab() === 'documents'" class="space-y-6">
+            <div *ngIf="activeTab === 'documents'" class="space-y-6">
               <div class="p-4 border-2 border-dashed border-border rounded-lg bg-muted/30">
                 <div class="flex items-center justify-between mb-4">
                   <h4 class="font-medium">Upload Documents</h4>
@@ -325,35 +325,35 @@ interface Tab {
                   <div>
                     <label class="text-sm font-medium block mb-1">File</label>
                     <input type="file" (change)="onFileSelected($event)" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                           class="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground file:cursor-pointer">
+                            class="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground file:cursor-pointer">
                   </div>
-                  <div *ngIf="selectedFile()" class="p-3 bg-background rounded-lg border">
+                  <div *ngIf="selectedFile" class="p-3 bg-background rounded-lg border">
                     <div class="flex items-center gap-3">
                       <div class="w-10 h-10 rounded bg-muted flex items-center justify-center">
                         <lucide-icon [name]="getFileIcon()" size="20"></lucide-icon>
                       </div>
                       <div class="flex-1">
-                        <p class="text-sm font-medium">{{ selectedFile()?.name }}</p>
-                        <p class="text-xs text-muted-foreground">{{ formatFileSize(selectedFile()?.size || 0) }}</p>
+                        <p class="text-sm font-medium">{{ selectedFile?.name }}</p>
+                        <p class="text-xs text-muted-foreground">{{ formatFileSize(selectedFile?.size || 0) }}</p>
                       </div>
                       <button type="button" (click)="clearSelectedFile()" class="text-muted-foreground hover:text-destructive">
                         <lucide-icon name="x" size="16"></lucide-icon>
                       </button>
                     </div>
                     <div *ngIf="isImageFile()" class="mt-3">
-                      <img [src]="filePreviewUrl()" class="max-h-40 rounded border" alt="Preview">
+                      <img [src]="filePreviewUrl" class="max-h-40 rounded border" alt="Preview">
                     </div>
                   </div>
-                  <app-button type="button" variant="outline" size="sm" (click)="uploadDocument()" [disabled]="!selectedFile()">
+                  <app-button type="button" variant="outline" size="sm" (click)="uploadDocument()" [disabled]="!selectedFile">
                     <lucide-icon name="upload" size="16" class="mr-2"></lucide-icon> Add Document
                   </app-button>
                 </div>
               </div>
 
-              <div *ngIf="uploadedDocuments().length > 0">
+              <div *ngIf="uploadedDocuments.length > 0">
                 <h4 class="font-medium mb-4">Uploaded Documents</h4>
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <div *ngFor="let doc of uploadedDocuments()" class="p-4 border rounded-lg">
+                  <div *ngFor="let doc of uploadedDocuments" class="p-4 border rounded-lg">
                     <div class="flex items-start gap-3">
                       <div class="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
                         <lucide-icon name="file-text" size="20" class="text-muted-foreground"></lucide-icon>
@@ -375,41 +375,41 @@ interface Tab {
 
         <!-- Navigation Buttons -->
         <div class="flex items-center justify-between mt-6">
-          <app-button *ngIf="activeTab() !== 'personal'" type="button" variant="outline" (click)="previousTab()">
+          <app-button *ngIf="activeTab !== 'personal'" type="button" variant="outline" (click)="previousTab()">
             <lucide-icon name="chevron-left" size="16" class="mr-2"></lucide-icon> Previous
           </app-button>
           <div></div>
           <div class="flex gap-2">
             <app-button type="button" variant="outline" routerLink="/employees">Cancel</app-button>
-            <app-button *ngIf="activeTab() !== 'documents'" type="button" (click)="nextTab()">
+            <app-button *ngIf="activeTab !== 'documents'" type="button" (click)="nextTab()">
               Next <lucide-icon name="chevron-right" size="16" class="ml-2"></lucide-icon>
             </app-button>
-            <app-button *ngIf="activeTab() === 'documents'" type="submit" [disabled]="saving()">
-              <lucide-icon name="save" size="16" class="mr-2"></lucide-icon> {{ saving() ? 'Saving...' : (isEditMode() ? 'Update Employee' : 'Create Employee') }}
+            <app-button *ngIf="activeTab === 'documents'" type="submit" [disabled]="saving">
+              <lucide-icon name="save" size="16" class="mr-2"></lucide-icon> {{ saving ? 'Saving...' : (isEditMode ? 'Update Employee' : 'Create Employee') }}
             </app-button>
           </div>
         </div>
       </form>
     </div>
-  `,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  `
 })
 export class EmployeeFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private employeeService = inject(EmployeeService);
+  private cdr = inject(ChangeDetectorRef);
 
-  activeTab = signal('personal');
-  departments = signal<any[]>([]);
-  managers = signal<Employee[]>([]);
+  activeTab = 'personal';
+  departments: any[] = [];
+  managers: Employee[] = [];
   
-  selectedFile = signal<File | null>(null);
-  filePreviewUrl = signal<string | null>(null);
+  selectedFile: File | null = null;
+  filePreviewUrl: string | null = null;
   uploadType: DocumentType = 'OTHER';
-  uploadedDocuments = signal<{ file: File; type: DocumentType; name: string }[]>([]);
-  saving = signal(false);
+  uploadedDocuments: { file: File; type: DocumentType; name: string }[] = [];
+  saving = false;
   
-  isEditMode = signal(false);
+  isEditMode = false;
   employeeId: string | null = null;
 
   formData: any = {
@@ -461,20 +461,26 @@ export class EmployeeFormComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.employeeId = id;
-      this.isEditMode.set(true);
+      this.isEditMode = true;
       this.loadEmployee(id);
     }
   }
 
   loadDepartments() {
     this.employeeService.getDepartments().subscribe({
-      next: (res) => this.departments.set(res.data)
+      next: (res) => {
+        this.departments = res.data;
+        this.cdr.detectChanges();
+      }
     });
   }
 
   loadManagers() {
     this.employeeService.getManagers(this.employeeId || undefined).subscribe({
-      next: (res) => this.managers.set(res.data)
+      next: (res) => {
+        this.managers = res.data;
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -514,8 +520,14 @@ export class EmployeeFormComponent implements OnInit {
           emergencyPhone: emp.emergencyPhone || '',
           emergencyRelation: emp.emergencyRelation || ''
         };
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  setActiveTab(tabId: string) {
+    this.activeTab = tabId;
+    this.cdr.markForCheck();
   }
 
   hasError(tabId: string): boolean {
@@ -548,16 +560,18 @@ export class EmployeeFormComponent implements OnInit {
   }
 
   nextTab() {
-    const tabIndex = this.tabs.findIndex(t => t.id === this.activeTab());
-    if (this.validateTab(this.activeTab())) {
-      this.activeTab.set(this.tabs[tabIndex + 1].id);
+    const tabIndex = this.tabs.findIndex(t => t.id === this.activeTab);
+    if (this.validateTab(this.activeTab)) {
+      this.activeTab = this.tabs[tabIndex + 1].id;
+      this.cdr.markForCheck();
     }
   }
 
   previousTab() {
-    const tabIndex = this.tabs.findIndex(t => t.id === this.activeTab());
+    const tabIndex = this.tabs.findIndex(t => t.id === this.activeTab);
     if (tabIndex > 0) {
-      this.activeTab.set(this.tabs[tabIndex - 1].id);
+      this.activeTab = this.tabs[tabIndex - 1].id;
+      this.cdr.markForCheck();
     }
   }
 
@@ -565,30 +579,35 @@ export class EmployeeFormComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      this.selectedFile.set(file);
+      this.selectedFile = file;
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
-        reader.onload = (e) => this.filePreviewUrl.set(e.target?.result as string);
+        reader.onload = (e) => {
+          this.filePreviewUrl = e.target?.result as string;
+          this.cdr.markForCheck();
+        };
         reader.readAsDataURL(file);
       } else {
-        this.filePreviewUrl.set(null);
+        this.filePreviewUrl = null;
       }
+      this.cdr.markForCheck();
     }
   }
 
   clearSelectedFile() {
-    this.selectedFile.set(null);
-    this.filePreviewUrl.set(null);
+    this.selectedFile = null;
+    this.filePreviewUrl = null;
+    this.cdr.markForCheck();
   }
 
   isImageFile(): boolean {
-    const file = this.selectedFile();
+    const file = this.selectedFile;
     return file ? file.type.startsWith('image/') : false;
   }
 
   getFileIcon(): string {
     if (this.isImageFile()) return 'image';
-    const file = this.selectedFile();
+    const file = this.selectedFile;
     if (!file) return 'file';
     if (file.type === 'application/pdf') return 'file-text';
     return 'file';
@@ -618,48 +637,87 @@ export class EmployeeFormComponent implements OnInit {
   }
 
   uploadDocument() {
-    if (!this.selectedFile()) return;
-    const docs = this.uploadedDocuments();
-    this.uploadedDocuments.set([...docs, { 
-      file: this.selectedFile()!, 
+    if (!this.selectedFile) return;
+    this.uploadedDocuments = [...this.uploadedDocuments, { 
+      file: this.selectedFile!, 
       type: this.uploadType,
-      name: this.selectedFile()!.name 
-    }]);
+      name: this.selectedFile!.name 
+    }];
     this.clearSelectedFile();
+    this.cdr.markForCheck();
   }
 
   removeDocument(doc: { file: File; type: DocumentType; name: string }) {
-    const docs = this.uploadedDocuments().filter(d => d !== doc);
-    this.uploadedDocuments.set(docs);
+    this.uploadedDocuments = this.uploadedDocuments.filter(d => d !== doc);
+    this.cdr.markForCheck();
   }
 
   onSubmit() {
-    if (!this.validateTab(this.activeTab())) return;
+    if (!this.validateTab(this.activeTab)) return;
     
-    this.saving.set(true);
-    const employeeData = {
-      ...this.formData,
-      departmentId: this.formData.departmentId || undefined,
-      managerId: this.formData.managerId || undefined,
-      baseSalary: this.formData.baseSalary ? Number(this.formData.baseSalary) : undefined
+    this.saving = true;
+    this.cdr.detectChanges();
+    
+    // Ensure dates are in ISO format for the backend
+    const formatToISO = (dateStr: string) => {
+      if (!dateStr) return undefined;
+      try {
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? undefined : d.toISOString();
+      } catch (e) {
+        return undefined;
+      }
     };
 
-    const operation = this.isEditMode()
+    // Clean data: remove empty strings and format numbers/dates
+    const employeeData: any = {};
+    Object.keys(this.formData).forEach(key => {
+      const value = this.formData[key];
+      if (value !== '' && value !== null && value !== undefined) {
+        employeeData[key] = value;
+      }
+    });
+
+    // Apply specific formats
+    employeeData.dateOfBirth = formatToISO(this.formData.dateOfBirth);
+    employeeData.hireDate = formatToISO(this.formData.hireDate);
+    employeeData.probationEndDate = formatToISO(this.formData.probationEndDate);
+    
+    if (employeeData.baseSalary) {
+      employeeData.baseSalary = Number(employeeData.baseSalary);
+    }
+    
+    // Ensure IDs are undefined if empty (should be handled by cleanup above, but to be sure)
+    if (!employeeData.departmentId) delete employeeData.departmentId;
+    if (!employeeData.managerId) delete employeeData.managerId;
+    if (!employeeData.positionId) delete employeeData.positionId;
+    if (!employeeData.locationId) delete employeeData.locationId;
+
+    const operation = this.isEditMode
       ? this.employeeService.updateEmployee(this.employeeId!, employeeData)
       : this.employeeService.createEmployee(employeeData);
 
     operation.subscribe({
-      next: async (res) => {
-        const empId = this.isEditMode() ? this.employeeId! : res.data.id;
+      next: async (res: any) => {
+        const empId = this.isEditMode ? this.employeeId! : res.data.id;
         
-        for (const doc of this.uploadedDocuments()) {
-          await this.employeeService.uploadDocument(empId, doc.file, doc.type).toPromise();
+        for (const doc of this.uploadedDocuments) {
+          try {
+            await this.employeeService.uploadDocument(empId, doc.file, doc.type).toPromise();
+          } catch (e) {
+            console.error('Error uploading document', e);
+          }
         }
         
-        this.saving.set(false);
+        this.saving = false;
+        this.cdr.detectChanges();
         this.router.navigate(['/employees', empId]);
       },
-      error: () => this.saving.set(false)
+      error: (err) => {
+        console.error('Error saving employee', err);
+        this.saving = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 }

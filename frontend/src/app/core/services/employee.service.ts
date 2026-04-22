@@ -7,8 +7,10 @@ export interface Employee {
   id: string;
   employeeCode: string;
   firstName: string;
+  middleName?: string;
   lastName: string;
   displayName?: string;
+  bloodType?: BloodType;
   jobTitle: string;
   status: EmploymentStatus;
   employmentType: EmploymentType;
@@ -84,10 +86,14 @@ export interface EmployeeQuery {
 
 export interface PaginatedResponse<T> {
   data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 export interface Document {
@@ -160,15 +166,16 @@ export interface PerformanceSummary {
   goalsTotal: number;
 }
 
-type EmploymentStatus = 'ACTIVE' | 'PROBATION' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED' | 'RETIRED';
-type EmploymentType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN' | 'FREELANCE' | 'TEMPORARY';
-type Gender = 'MALE' | 'FEMALE' | 'NON_BINARY' | 'PREFER_NOT_TO_SAY';
-type MaritalStatus = 'SINGLE' | 'MARRIED' | 'DIVORCED' | 'WIDOWED' | 'OTHER';
-type PayrollFrequency = 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'ANNUALLY';
-type DocumentType = 'NATIONAL_ID' | 'PASSPORT' | 'DRIVERS_LICENSE' | 'EMPLOYMENT_CONTRACT' | 'NDA' | 'WORK_PERMIT' | 'TAX_FORM' | 'DEGREE_CERTIFICATE' | 'PROFESSIONAL_LICENSE' | 'PERFORMANCE_REVIEW_DOC' | 'DISCIPLINARY_NOTICE' | 'RESIGNATION_LETTER' | 'OTHER';
-type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'SOFT_DELETE' | 'RESTORE';
-type LeaveType = 'VACATION' | 'SICK' | 'PERSONAL' | 'MATERNITY' | 'PATERNITY' | 'PARENTAL' | 'BEREAVEMENT' | 'UNPAID';
-type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+export type EmploymentStatus = 'ACTIVE' | 'PROBATION' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED' | 'RETIRED';
+export type EmploymentType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN' | 'FREELANCE' | 'TEMPORARY';
+export type Gender = 'MALE' | 'FEMALE' | 'NON_BINARY' | 'PREFER_NOT_TO_SAY';
+export type MaritalStatus = 'SINGLE' | 'MARRIED' | 'DIVORCED' | 'WIDOWED' | 'OTHER';
+export type BloodType = 'A_POS' | 'A_NEG' | 'B_POS' | 'B_NEG' | 'AB_POS' | 'AB_NEG' | 'O_POS' | 'O_NEG' | 'UNKNOWN';
+export type PayrollFrequency = 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'ANNUALLY';
+export type DocumentType = 'NATIONAL_ID' | 'PASSPORT' | 'DRIVERS_LICENSE' | 'EMPLOYMENT_CONTRACT' | 'NDA' | 'WORK_PERMIT' | 'TAX_FORM' | 'DEGREE_CERTIFICATE' | 'PROFESSIONAL_LICENSE' | 'PERFORMANCE_REVIEW_DOC' | 'DISCIPLINARY_NOTICE' | 'RESIGNATION_LETTER' | 'OTHER';
+export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'SOFT_DELETE' | 'RESTORE';
+export type LeaveType = 'VACATION' | 'SICK' | 'PERSONAL' | 'MATERNITY' | 'PATERNITY' | 'PARENTAL' | 'BEREAVEMENT' | 'UNPAID';
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 @Injectable({ providedIn: 'root' })
 export class EmployeeService {

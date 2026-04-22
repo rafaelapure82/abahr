@@ -1,8 +1,9 @@
 import { Routes } from '@angular/router';
+import { BenefitsCatalogComponent } from './benefits-catalog/benefits-catalog.component';
 
 export const BENEFITS_ROUTES: Routes = [
   {
     path: '',
-    loadComponent: () => import('./benefits-catalog/benefits-catalog.component').then(m => m.BenefitsCatalogComponent)
+    component: BenefitsCatalogComponent
   }
 ];

@@ -45,8 +45,8 @@ export class RecruitmentService {
     return this.http.get<any>(`${this.apiUrl}/applications/${id}`);
   }
 
-  moveCandidate(applicationId: string, stage: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/applications/${applicationId}/move`, { stage });
+  moveCandidate(applicationId: string, data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/applications/${applicationId}/move`, data);
   }
 
   scheduleInterview(applicationId: string, interviewData: any): Observable<any> {
