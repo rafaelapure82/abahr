@@ -1,0 +1,233 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import Link from 'next/link';
+import { 
+  Users, Search, Filter, Plus, MoreHorizontal, 
+  Mail, Phone, Building2, Loader2, UserX,
+  Eye, Edit3, Calendar, Trash2, X
+} from 'lucide-react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+
+export default function EmployeeListPage() {
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [deptFilter, setDeptFilter] = useState('');
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [departments, setDepartments] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchEmployees();
+    fetchDepartments();
+  }, [statusFilter, deptFilter]);
+
+  const fetchEmployees = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const params: any = { search: searchTerm };
+      if (statusFilter) params.status = statusFilter;
+      if (deptFilter) params.departmentId = deptFilter;
+
+      const response = await axios.get(`${API_URL}/employees`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+      });
+      setEmployees(response.data.data);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_URL}/departments`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDepartments(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching depts:", error);
+    }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchEmployees();
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setDeptFilter('');
+    setShowFilters(false);
+  };
+
+  return (
+    <div className="space-y-8 pb-20 relative" onClick={() => setActiveMenu(null)}>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Users className="text-primary w-6 h-6" />
+            Directorio de Personal
+          </h1>
+          <p className="text-sm text-slate-400">Administración central de talento humano y expedientes.</p>
+        </div>
+        <Link href="/dashboard/employees/new" className="btn-primary px-6 py-3 shadow-xl shadow-primary/20 flex items-center gap-2">
+          <Plus className="w-5 h-5" />
+          Nuevo Empleado
+        </Link>
+      </div>
+
+      {/* Search & Advanced Filters */}
+      <div className="space-y-4">
+        <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+            <input 
+              type="text" 
+              placeholder="Buscar por nombre, cargo, código o documento..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-modern w-full pl-12 h-14 bg-white border-slate-100 shadow-sm font-medium"
+            />
+          </div>
+          <button 
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`px-6 h-14 border rounded-2xl flex items-center gap-2 font-bold transition-all ${showFilters ? 'bg-primary text-white border-primary shadow-lg' : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'}`}
+          >
+            <Filter className="w-5 h-5" /> {showFilters ? 'Ocultar Filtros' : 'Filtros'}
+          </button>
+          <button type="submit" className="btn-primary px-8 h-14 shadow-lg">Buscar</button>
+        </form>
+
+        {showFilters && (
+          <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-4 duration-300">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estatus</label>
+              <select 
+                value={statusFilter} 
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full h-11 bg-white border-slate-200 rounded-xl px-4 text-xs font-bold"
+              >
+                <option value="">Todos los estados</option>
+                <option value="ACTIVE">ACTIVO</option>
+                <option value="PROBATION">EN PRUEBA</option>
+                <option value="ON_LEAVE">DE LICENCIA</option>
+                <option value="TERMINATED">INACTIVO</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Departamento</label>
+              <select 
+                value={deptFilter} 
+                onChange={(e) => setDeptFilter(e.target.value)}
+                className="w-full h-11 bg-white border-slate-200 rounded-xl px-4 text-xs font-bold"
+              >
+                <option value="">Todos los departamentos</option>
+                {departments.map((d: any) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button onClick={clearFilters} className="text-[10px] font-black text-red-400 uppercase tracking-widest flex items-center gap-1 hover:text-red-600 transition-colors">
+                <X className="w-3 h-3" /> Limpiar Filtros
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Table Container */}
+      <div className="card-premium bg-white/90 backdrop-blur-xl border-slate-100">
+        {loading ? (
+          <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="font-bold tracking-tight">Cargando directorio...</p>
+          </div>
+        ) : employees.length === 0 ? (
+          <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-4">
+            <UserX className="w-16 h-16 opacity-20" />
+            <p className="text-lg font-bold">No se encontraron empleados</p>
+          </div>
+        ) : (
+          <div className="overflow-visible">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-50 bg-slate-50/50">
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Empleado</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Puesto / Depto</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {employees.map((emp) => (
+                  <tr key={emp.id} className="hover:bg-slate-50/50 transition-all group">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-100 border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+                          {emp.avatarUrl ? (
+                            <img src={emp.avatarUrl} alt={emp.firstName} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold bg-primary/5 text-primary">
+                              {emp.firstName?.[0]}{emp.lastName?.[0]}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800 group-hover:text-primary transition-colors leading-tight">
+                            {emp.firstName} {emp.lastName}
+                          </p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase">{emp.employeeCode}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <p className="text-xs font-bold text-slate-700">{emp.jobTitle}</p>
+                      <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold uppercase">
+                        <Building2 className="w-3 h-3" /> {emp.department?.name || 'S/D'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-right relative">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === emp.id ? null : emp.id); }}
+                        className={`p-2 rounded-xl transition-all border ${activeMenu === emp.id ? 'bg-primary text-white border-primary shadow-lg' : 'bg-white text-slate-400 border-slate-100 hover:border-primary/20 hover:text-primary'}`}
+                      >
+                        <MoreHorizontal className="w-5 h-5" />
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      {activeMenu === emp.id && (
+                        <div className="absolute right-6 top-full mt-2 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200">
+                          <Link href={`/dashboard/employees/${emp.id}`} className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors border-b border-slate-50">
+                            <Eye className="w-4 h-4 text-primary" /> Ver Expediente
+                          </Link>
+                          <Link href={`/dashboard/employees/edit/${emp.id}`} className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors border-b border-slate-50">
+                            <Edit3 className="w-4 h-4 text-amber-500" /> Editar Datos
+                          </Link>
+                          <Link href={`/dashboard/attendance?emp=${emp.id}`} className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                            <Calendar className="w-4 h-4 text-teal-500" /> Ver Asistencia
+                          </Link>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

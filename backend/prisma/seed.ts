@@ -326,6 +326,7 @@ async function main() {
   );
 
   // ── HR Manager ──────────────────────────────────────────────────────────
+  /*
   const { employee: hrManagerEmp } = await createUser(
     'hr.manager@abatalent.com',
     'HrManager@123!',
@@ -360,8 +361,10 @@ async function main() {
       hireDate: new Date('2023-02-01'),
     },
   );
+  */
 
   // ── Department Manager (Tech) ─────────────────────────────────────────────
+  /*
   const { employee: techMgrEmp } = await createUser(
     'tech.manager@abatalent.com',
     'TechMgr@123!',
@@ -378,113 +381,9 @@ async function main() {
       hireDate: new Date('2022-06-01'),
     },
   );
+  */
 
-  // ── Senior Engineer ──────────────────────────────────────────────────────
-  const { employee: seniorEngEmp } = await createUser(
-    'senior.eng@abatalent.com',
-    'SenEng@123!',
-    'EMPLOYEE',
-    {
-      firstName: 'Aisha',
-      lastName: 'Johnson',
-      jobTitle: 'Senior Software Engineer',
-      departmentId: backendTeam.id,
-      positionId: positions['SEN-ENG'],
-      managerId: techMgrEmp.id,
-      baseSalary: 112000,
-      gender: Gender.FEMALE,
-      hireDate: new Date('2022-09-01'),
-    },
-  );
-
-  // ── Junior Engineers ─────────────────────────────────────────────────────
-  await createUser(
-    'eng1@abatalent.com',
-    'Eng1@123!',
-    'EMPLOYEE',
-    {
-      firstName: 'Lucas',
-      lastName: 'Silva',
-      jobTitle: 'Software Engineer',
-      departmentId: backendTeam.id,
-      positionId: positions['ENG'],
-      managerId: seniorEngEmp.id,
-      baseSalary: 75000,
-      gender: Gender.MALE,
-      hireDate: new Date('2023-04-01'),
-    },
-  );
-
-  await createUser(
-    'eng2@abatalent.com',
-    'Eng2@123!',
-    'EMPLOYEE',
-    {
-      firstName: 'Sophie',
-      lastName: 'Martin',
-      jobTitle: 'Frontend Engineer',
-      departmentId: frontendTeam.id,
-      positionId: positions['FE-ENG'],
-      managerId: techMgrEmp.id,
-      baseSalary: 72000,
-      gender: Gender.FEMALE,
-      hireDate: new Date('2023-06-15'),
-    },
-  );
-
-  // ── Payroll Admin ────────────────────────────────────────────────────────
-  await createUser(
-    'payroll.admin@abatalent.com',
-    'Payroll@123!',
-    'PAYROLL_ADMIN',
-    {
-      firstName: 'Diana',
-      lastName: 'Torres',
-      jobTitle: 'Payroll Administrator',
-      departmentId: financeDept.id,
-      positionId: positions['PAY-ADMIN'],
-      managerId: superAdminEmp.id,
-      baseSalary: 62000,
-      gender: Gender.FEMALE,
-      hireDate: new Date('2022-11-01'),
-    },
-  );
-
-  // ── Recruiter ─────────────────────────────────────────────────────────────
-  await createUser(
-    'recruiter@abatalent.com',
-    'Recruiter@123!',
-    'RECRUITER',
-    {
-      firstName: 'Marco',
-      lastName: 'Rivera',
-      jobTitle: 'Talent Acquisition Specialist',
-      departmentId: hrDept.id,
-      positionId: positions['HR-SPEC'],
-      managerId: hrManagerEmp.id,
-      baseSalary: 55000,
-      gender: Gender.MALE,
-      hireDate: new Date('2023-08-01'),
-    },
-  );
-
-  // ── Employee (viewer portal) ──────────────────────────────────────────────
-  await createUser(
-    'employee@abatalent.com',
-    'Employee@123!',
-    'EMPLOYEE',
-    {
-      firstName: 'Emma',
-      lastName: 'Wilson',
-      jobTitle: 'Account Executive',
-      departmentId: salesDept.id,
-      positionId: positions['AE'],
-      managerId: superAdminEmp.id,
-      baseSalary: 68000,
-      gender: Gender.FEMALE,
-      hireDate: new Date('2023-09-01'),
-    },
-  );
+  // Resto de empleados de prueba omitidos para permitir carga real
 
   // ═══════════════════════════════════════
   // 5. LEAVE POLICIES

@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta basada en la imagen: Mint / Teal / Slate */
+  --color-primary: #00bfa5; /* Verde menta principal */
+  --color-primary-hover: #00a690;
+  --color-primary-light: #e0f2f1;
+  --color-secondary: #0f172a;
+  --color-accent: #26a69a;
+  
+  --color-sidebar: #ffffff;
+  --color-background: #f8fafc;
+  --color-card: #ffffff;
+  --color-border: #f1f5f9;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --primary: #00bfa5;
+  --primary-foreground: #ffffff;
+  --muted: #64748b;
+  --muted-foreground: #94a3b8;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #00bfa5;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Clases de utilidad para el estilo de la imagen */
+.card-premium {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+}
+
+.card-premium:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+}
+
+.sidebar-item-active {
+  background-color: #00bfa5;
+  color: white;
+  border-radius: 0.75rem;
+}
+
+.input-modern {
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s;
+}
+
+.input-modern:focus {
+  border-color: #00bfa5;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 191, 165, 0.1);
+}
+
+.btn-primary {
+  background-color: #00bfa5;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #00a690;
+  transform: translateY(-1px);
+}

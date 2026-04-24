@@ -3,10 +3,12 @@ FROM node:20-alpine AS development
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
+
+COPY . .
 
 EXPOSE 4200
-CMD ["npm", "run", "start", "--", "--host", "0.0.0.0", "--poll", "1000"]
+CMD ["npm", "run", "dev", "--", "-p", "4200"]
 
 # ── Stage 2: builder ──────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
@@ -16,13 +18,19 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-RUN npm run build -- --output-path=dist --configuration=production
+RUN npm run build
 
-# ── Stage 3: production (nginx) ───────────────────────────────────────────────
-FROM nginx:1.25-alpine AS production
+# ── Stage 3: production ───────────────────────────────────────────────────────
+FROM node:20-alpine AS production
+WORKDIR /app
 
-COPY --from=builder /app/dist/aba-talent-frontend /usr/share/nginx/html
-COPY nginx-spa.conf /etc/nginx/conf.d/default.conf
+ENV NODE_ENV=production
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+COPY --from=builder /app/next.config.ts ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+EXPOSE 3000
+CMD ["npm", "run", "start"]

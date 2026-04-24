@@ -99,7 +99,7 @@ services:
       - /app/node_modules
     networks:
       - aba_network
-    command: npm run start -- --host 0.0.0.0 --poll 1000
+    command: npm run dev -- -p 4200
 
   # ─────────────────────────────────────────
   # Nginx reverse-proxy (prod only)

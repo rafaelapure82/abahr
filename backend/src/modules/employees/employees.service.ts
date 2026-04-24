@@ -328,12 +328,16 @@ export class EmployeesService {
   }
 
   private async nextCode(): Promise<string> {
-    const last = await prisma.employee.findFirst({
-      orderBy: { employeeCode: 'desc' },
+    const employees = await prisma.employee.findMany({
       select: { employeeCode: true },
     });
-    const n = last ? parseInt(last.employeeCode.replace('EMP-', ''), 10) + 1 : 1;
-    return `EMP-${String(n).padStart(4, '0')}`;
+    
+    const numbers = employees
+      .map(e => parseInt(e.employeeCode.replace('EMP-', ''), 10))
+      .filter(n => !isNaN(n));
+      
+    const max = numbers.length > 0 ? Math.max(...numbers) : 0;
+    return `EMP-${String(max + 1).padStart(4, '0')}`;
   }
 }
 
