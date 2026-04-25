@@ -31,6 +31,7 @@ export const payrollQuerySchema = z.object({
   page: z.coerce.number().optional(),
   limit: z.coerce.number().optional(),
   status: z.nativeEnum(PayrollStatus).optional(),
+  employeeId: z.string().uuid().optional(),
 });
 
 export type CreatePayrollPeriodDto = z.infer<typeof createPayrollPeriodSchema>;

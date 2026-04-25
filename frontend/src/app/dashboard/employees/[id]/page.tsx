@@ -7,12 +7,14 @@ import {
   ArrowLeft, Mail, Phone, MapPin, Briefcase, 
   Calendar, Building2, FileText, User, 
   History, CreditCard, ShieldAlert, Trash2, 
-  Download, Loader2, CheckCircle2, X
+  Download, Loader2, CheckCircle2, X, Plus, Clock, 
+  DollarSign, FileCheck
 } from 'lucide-react';
+import UploadDocumentModal from '@/components/employees/UploadDocumentModal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
-type Tab = 'GENERAL' | 'DOCUMENTS' | 'HISTORY';
+type Tab = 'GENERAL' | 'DOCUMENTS' | 'HISTORY' | 'ATTENDANCE' | 'PAYROLL';
 
 export default function EmployeeDetailPage() {
   const { id } = useParams();
@@ -21,7 +23,10 @@ export default function EmployeeDetailPage() {
   const [employee, setEmployee] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [docs, setDocs] = useState<any[]>([]);
+  const [attendance, setAttendance] = useState<any[]>([]);
+  const [payroll, setPayroll] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -31,14 +36,24 @@ export default function EmployeeDetailPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('access_token');
-      const [empRes, histRes, docsRes] = await Promise.all([
+      const [empRes, histRes, docsRes, attRes, payRes] = await Promise.all([
         axios.get(`${API_URL}/employees/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${API_URL}/employees/${id}/history`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_URL}/employees/${id}/documents`, { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`${API_URL}/employees/${id}/documents`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_URL}/attendance`, { 
+          headers: { Authorization: `Bearer ${token}` },
+          params: { employeeId: id, limit: 10 }
+        }),
+        axios.get(`${API_URL}/payroll/history`, { 
+          headers: { Authorization: `Bearer ${token}` },
+          params: { employeeId: id }
+        })
       ]);
       setEmployee(empRes.data.data);
       setHistory(histRes.data.data || []);
       setDocs(docsRes.data.data || []);
+      setAttendance(attRes.data.data || []);
+      setPayroll(payRes.data.data || []);
     } catch (error) {
       console.error("Error fetching detail:", error);
     } finally {
@@ -63,6 +78,14 @@ export default function EmployeeDetailPage() {
     <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
       <Loader2 className="w-12 h-12 animate-spin text-primary" />
       <p className="text-xs font-black uppercase tracking-widest text-slate-400">Cargando expediente...</p>
+    </div>
+  );
+  
+  if (!employee) return (
+    <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
+      <ShieldAlert className="w-12 h-12 text-red-500" />
+      <p className="text-sm font-bold text-slate-800">No se pudo cargar el expediente</p>
+      <button onClick={fetchData} className="btn-primary px-6 py-2">Reintentar</button>
     </div>
   );
 
@@ -96,20 +119,29 @@ export default function EmployeeDetailPage() {
 
           <div className="flex gap-3">
             <button onClick={() => router.back()} className="p-3 text-slate-400 hover:text-primary transition-colors"><ArrowLeft className="w-6 h-6" /></button>
+            <button 
+              onClick={() => router.push(`/dashboard/offboarding?employeeId=${id}`)} 
+              className="px-6 py-3 bg-red-50 text-red-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all border border-red-100"
+            >
+              Iniciar Salida
+            </button>
             <button onClick={() => router.push(`/dashboard/employees/edit/${id}`)} className="btn-primary px-6 py-3 shadow-xl">Editar Perfil</button>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-slate-100 pb-2">
-        {(['GENERAL', 'DOCUMENTS', 'HISTORY'] as Tab[]).map((tab) => (
+      <div className="flex gap-2 border-b border-slate-100 pb-2 overflow-x-auto no-scrollbar">
+        {(['GENERAL', 'DOCUMENTS', 'ATTENDANCE', 'PAYROLL', 'HISTORY'] as Tab[]).map((tab) => (
           <button 
             key={tab} 
             onClick={() => setActiveTab(tab)}
-            className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? 'bg-primary text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
           >
-            {tab === 'GENERAL' ? 'Información' : tab === 'DOCUMENTS' ? 'Expediente' : 'Historial'}
+            {tab === 'GENERAL' ? 'Información' : 
+             tab === 'DOCUMENTS' ? 'Expediente' : 
+             tab === 'ATTENDANCE' ? 'Asistencia' :
+             tab === 'PAYROLL' ? 'Nómina' : 'Historial'}
           </button>
         ))}
       </div>
@@ -171,7 +203,15 @@ export default function EmployeeDetailPage() {
 
         {activeTab === 'DOCUMENTS' && (
           <div className="lg:col-span-3 card-premium bg-white p-8 space-y-6">
-            <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 border-b border-slate-50 pb-4">Documentos Digitalizados</h3>
+            <div className="flex items-center justify-between border-b border-slate-50 pb-4">
+              <h3 className="font-black text-xs uppercase tracking-widest text-slate-400">Expediente Digital</h3>
+              <button 
+                onClick={() => setIsUploadModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm"
+              >
+                <Plus className="w-3 h-3" /> Subir Documento
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {docs.length === 0 ? (
                 <p className="col-span-full text-center py-20 text-slate-400 font-bold">No hay documentos en el expediente.</p>
@@ -221,7 +261,87 @@ export default function EmployeeDetailPage() {
           </div>
         )}
 
+        {activeTab === 'ATTENDANCE' && (
+          <div className="lg:col-span-3 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="card-premium p-6 bg-primary text-white text-center">
+                <p className="text-[10px] font-black uppercase opacity-60">Asistencia Total</p>
+                <p className="text-3xl font-black">{attendance.length}</p>
+              </div>
+              <div className="card-premium p-6 bg-white text-center">
+                <p className="text-[10px] font-black uppercase text-slate-400">Promedio Check-In</p>
+                <p className="text-3xl font-black text-slate-800">08:45 AM</p>
+              </div>
+              <div className="card-premium p-6 bg-white text-center border-2 border-primary/20">
+                <p className="text-[10px] font-black uppercase text-primary">Estatus Actual</p>
+                <p className="text-xl font-black text-slate-800">PRESENTE</p>
+              </div>
+            </div>
+            
+            <div className="card-premium bg-white p-8">
+              <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 border-b border-slate-50 pb-4">Últimos Registros</h3>
+              <div className="space-y-3 mt-6">
+                {attendance.length === 0 ? (
+                  <p className="text-center py-10 text-slate-400 font-bold">No hay registros de asistencia.</p>
+                ) : attendance.map((att) => (
+                  <div key={att.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-white rounded-xl text-primary shadow-sm"><Clock className="w-5 h-5" /></div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">{new Date(att.date).toLocaleDateString()}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase">{att.status}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-black text-slate-700">{att.checkIn ? new Date(att.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'} → {att.checkOut ? new Date(att.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'PAYROLL' && (
+          <div className="lg:col-span-3 space-y-8">
+            <div className="card-premium bg-white p-8">
+              <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 border-b border-slate-50 pb-4">Histórico de Pagos</h3>
+              <div className="space-y-4 mt-6">
+                {payroll.length === 0 ? (
+                  <p className="text-center py-20 text-slate-400 font-bold">No se han generado recibos de nómina para este empleado.</p>
+                ) : payroll.map((pay) => (
+                  <div key={pay.id} className="p-6 bg-slate-50 rounded-[24px] border border-slate-100 flex items-center justify-between group hover:border-primary transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-white rounded-2xl text-emerald-500 shadow-sm"><DollarSign className="w-6 h-6" /></div>
+                      <div>
+                        <p className="text-sm font-black text-slate-800">{pay.payrollPeriod?.name || pay.payroll?.notes || 'Pago Ordinario'}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{pay.payroll?.status || 'PAID'} • {new Date(pay.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        <p className="text-lg font-black text-emerald-600">${pay.netPay || pay.netSalary}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Neto a Recibir</p>
+                      </div>
+                      <button className="p-3 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-primary hover:border-primary transition-all shadow-sm">
+                        <Download className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
+
+      <UploadDocumentModal 
+        employeeId={id as string} 
+        isOpen={isUploadModalOpen} 
+        onClose={() => setIsUploadModalOpen(false)}
+        onSuccess={fetchData}
+      />
     </div>
   );
 }

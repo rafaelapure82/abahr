@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { 
   LayoutDashboard, Users, Clock, Briefcase, 
   CreditCard, Settings, LogOut, Search, Bell, User as UserIcon,
-  Building2, GitBranch
+  Building2, GitBranch, ShieldAlert
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -17,7 +17,10 @@ const menuItems = [
   { icon: GitBranch, label: 'Organigrama', href: '/dashboard/org-chart', roles: ['ADMIN'] },
   { icon: Clock, label: 'Asistencia', href: '/dashboard/attendance', roles: ['ADMIN', 'USER'] },
   { icon: Briefcase, label: 'Recruitment', href: '/dashboard/recruitment', roles: ['ADMIN'] },
+  { icon: Bell, label: 'Onboarding', href: '/dashboard/onboarding', roles: ['ADMIN'] },
+  { icon: LogOut, label: 'Offboarding', href: '/dashboard/offboarding', roles: ['ADMIN'] },
   { icon: CreditCard, label: 'Payroll', href: '/dashboard/payroll', roles: ['ADMIN'] },
+  { icon: ShieldAlert, label: 'Auditoría', href: '/dashboard/audit-logs', roles: ['ADMIN'] },
   { icon: Settings, label: 'Configuración', href: '/dashboard/settings', roles: ['ADMIN'] },
   { icon: UserIcon, label: 'Mi Perfil', href: '/dashboard/profile', roles: ['ADMIN', 'USER'] },
 ];

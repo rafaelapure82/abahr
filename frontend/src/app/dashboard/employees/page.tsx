@@ -17,6 +17,11 @@ export default function EmployeeListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [deptFilter, setDeptFilter] = useState('');
+  const [docFilter, setDocFilter] = useState('');
+  const [minSalary, setMinSalary] = useState('');
+  const [maxSalary, setMaxSalary] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -24,15 +29,22 @@ export default function EmployeeListPage() {
   useEffect(() => {
     fetchEmployees();
     fetchDepartments();
-  }, [statusFilter, deptFilter]);
+  }, [statusFilter, deptFilter, minSalary, maxSalary, startDate, endDate, docFilter]);
 
   const fetchEmployees = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('access_token');
-      const params: any = { search: searchTerm };
-      if (statusFilter) params.status = statusFilter;
-      if (deptFilter) params.departmentId = deptFilter;
+      const params: any = { 
+        search: searchTerm,
+        status: statusFilter || undefined,
+        departmentId: deptFilter || undefined,
+        document: docFilter || undefined,
+        minSalary: minSalary || undefined,
+        maxSalary: maxSalary || undefined,
+        hireDateStart: startDate || undefined,
+        hireDateEnd: endDate || undefined
+      };
 
       const response = await axios.get(`${API_URL}/employees`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -67,6 +79,11 @@ export default function EmployeeListPage() {
     setSearchTerm('');
     setStatusFilter('');
     setDeptFilter('');
+    setDocFilter('');
+    setMinSalary('');
+    setMaxSalary('');
+    setStartDate('');
+    setEndDate('');
     setShowFilters(false);
   };
 
@@ -105,19 +122,19 @@ export default function EmployeeListPage() {
             onClick={() => setShowFilters(!showFilters)}
             className={`px-6 h-14 border rounded-2xl flex items-center gap-2 font-bold transition-all ${showFilters ? 'bg-primary text-white border-primary shadow-lg' : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'}`}
           >
-            <Filter className="w-5 h-5" /> {showFilters ? 'Ocultar Filtros' : 'Filtros'}
+            <Filter className="w-5 h-5" /> {showFilters ? 'Ocultar Filtros' : 'Filtros Avanzados'}
           </button>
           <button type="submit" className="btn-primary px-8 h-14 shadow-lg">Buscar</button>
         </form>
 
         {showFilters && (
-          <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-4 duration-300">
+          <div className="p-8 bg-slate-50 border border-slate-100 rounded-[32px] grid grid-cols-1 md:grid-cols-4 gap-6 animate-in slide-in-from-top-4 duration-300">
             <div className="space-y-1">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estatus</label>
               <select 
                 value={statusFilter} 
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full h-11 bg-white border-slate-200 rounded-xl px-4 text-xs font-bold"
+                className="w-full h-12 bg-white border-slate-200 rounded-xl px-4 text-xs font-bold"
               >
                 <option value="">Todos los estados</option>
                 <option value="ACTIVE">ACTIVO</option>
@@ -131,7 +148,7 @@ export default function EmployeeListPage() {
               <select 
                 value={deptFilter} 
                 onChange={(e) => setDeptFilter(e.target.value)}
-                className="w-full h-11 bg-white border-slate-200 rounded-xl px-4 text-xs font-bold"
+                className="w-full h-12 bg-white border-slate-200 rounded-xl px-4 text-xs font-bold"
               >
                 <option value="">Todos los departamentos</option>
                 {departments.map((d: any) => (
@@ -139,9 +156,55 @@ export default function EmployeeListPage() {
                 ))}
               </select>
             </div>
-            <div className="flex items-end">
-              <button onClick={clearFilters} className="text-[10px] font-black text-red-400 uppercase tracking-widest flex items-center gap-1 hover:text-red-600 transition-colors">
-                <X className="w-3 h-3" /> Limpiar Filtros
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Documento / ID</label>
+              <input 
+                type="text" 
+                value={docFilter}
+                onChange={(e) => setDocFilter(e.target.value)}
+                placeholder="DNI, RIF, etc."
+                className="w-full h-12 bg-white border-slate-200 rounded-xl px-4 text-xs font-bold"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rango Salarial</label>
+              <div className="flex gap-2">
+                <input 
+                  type="number" 
+                  value={minSalary}
+                  onChange={(e) => setMinSalary(e.target.value)}
+                  placeholder="Min"
+                  className="w-full h-12 bg-white border-slate-200 rounded-xl px-4 text-xs font-bold"
+                />
+                <input 
+                  type="number" 
+                  value={maxSalary}
+                  onChange={(e) => setMaxSalary(e.target.value)}
+                  placeholder="Max"
+                  className="w-full h-12 bg-white border-slate-200 rounded-xl px-4 text-xs font-bold"
+                />
+              </div>
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha de Ingreso (Rango)</label>
+              <div className="flex gap-2">
+                <input 
+                  type="date" 
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full h-12 bg-white border-slate-200 rounded-xl px-4 text-xs font-bold"
+                />
+                <input 
+                  type="date" 
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full h-12 bg-white border-slate-200 rounded-xl px-4 text-xs font-bold"
+                />
+              </div>
+            </div>
+            <div className="flex items-end md:col-span-2">
+              <button onClick={clearFilters} className="text-[10px] font-black text-red-400 uppercase tracking-widest flex items-center gap-1 hover:text-red-600 transition-colors p-3 bg-red-50 rounded-xl w-full justify-center">
+                <X className="w-4 h-4" /> Limpiar Todos los Filtros
               </button>
             </div>
           </div>

@@ -10,7 +10,8 @@ import {
   createPositionSchema,
   updatePositionSchema,
   createLocationSchema,
-  updateLocationSchema
+  updateLocationSchema,
+  bulkMoveEmployeesSchema
 } from './Departments.types';
 
 export const departmentsRouter = Router();
@@ -63,11 +64,23 @@ departmentsRouter.patch(
   validate(updateDepartmentSchema),
   DepartmentsController.update
 );
-
 departmentsRouter.delete(
   '/:id',
   rbac(MANAGE_ORG),
   DepartmentsController.remove
+);
+
+departmentsRouter.get(
+  '/:id/history',
+  rbac(READ_ORG),
+  DepartmentsController.getHistory
+);
+
+departmentsRouter.post(
+  '/bulk-move',
+  rbac(MANAGE_ORG),
+  validate(bulkMoveEmployeesSchema),
+  DepartmentsController.bulkMove
 );
 
 // ── Positions ──────────────────────────────────────────────────────────────
@@ -92,6 +105,12 @@ departmentsRouter.patch(
   DepartmentsController.updatePosition
 );
 
+departmentsRouter.delete(
+  '/positions/:id',
+  rbac(MANAGE_ORG),
+  DepartmentsController.removePosition
+);
+
 // ── Office Locations ────────────────────────────────────────────────────────
 
 departmentsRouter.get(
@@ -112,6 +131,12 @@ departmentsRouter.patch(
   rbac(MANAGE_ORG),
   validate(updateLocationSchema),
   DepartmentsController.updateLocation
+);
+
+departmentsRouter.delete(
+  '/locations/:id',
+  rbac(MANAGE_ORG),
+  DepartmentsController.removeLocation
 );
 
 

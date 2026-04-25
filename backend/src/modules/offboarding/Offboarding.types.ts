@@ -22,12 +22,12 @@ export type CreateOffboardingTemplateDto = z.infer<typeof CreateOffboardingTempl
 
 // ─── Offboarding Initiation ─────────────────────────────────────────────────
 export const InitiateOffboardingDtoSchema = z.object({
-  employeeId: z.string().uuid(),
-  templateId: z.string().uuid().optional(),
-  lastWorkDay: z.string().datetime(),
-  exitInterviewAt: z.string().datetime().optional(),
+  employeeId: z.string(),
+  templateId: z.string().optional(),
+  lastWorkDay: z.string(),
+  exitInterviewAt: z.string().optional(),
   exitReason: z.string().optional(),
-  hrOwnerId: z.string().uuid().optional(),
+  hrOwnerId: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -50,7 +50,7 @@ export type UpdateOffboardingTaskDto = z.infer<typeof UpdateOffboardingTaskDtoSc
 export const OffboardingQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
-  employeeId: z.string().uuid().optional(),
+  employeeId: z.string().optional(),
   status: z.nativeEnum(BoardingStatus).optional(),
   search: z.string().optional(),
 });

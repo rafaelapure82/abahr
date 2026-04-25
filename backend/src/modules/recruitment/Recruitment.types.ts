@@ -4,8 +4,9 @@ import { JobStatus, EmploymentType, ApplicationStatus, CandidateSource } from '@
 export const RecruitmentQuerySchema = z.object({
   page: z.coerce.number().optional(),
   limit: z.coerce.number().optional(),
-  status: z.nativeEnum(JobStatus).optional(),
+  status: z.nativeEnum(JobStatus).or(z.literal('')).optional(),
   departmentId: z.string().uuid().optional(),
+  search: z.string().optional(),
 });
 
 export type RecruitmentQuery = z.infer<typeof RecruitmentQuerySchema>;

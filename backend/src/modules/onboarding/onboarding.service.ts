@@ -103,7 +103,7 @@ export class OnboardingService {
     if (!employee) throw NotFound('Employee');
 
     // 1. Find Template
-    const template = dto.templateId 
+    const template = (dto.templateId && dto.templateId.trim()) 
       ? await this.findTemplateById(dto.templateId)
       : await prisma.onboardingTemplate.findFirst({ where: { isDefault: true }, include: { tasks: true } });
 
@@ -115,9 +115,9 @@ export class OnboardingService {
         employeeId: dto.employeeId,
         templateId: template.id,
         status: BoardingStatus.IN_PROGRESS,
-        startDate: dto.startDate ? new Date(dto.startDate) : new Date(),
-        targetDate: dto.targetDate ? new Date(dto.targetDate) : addDays(new Date(employee.hireDate), 30),
-        hrOwnerId: dto.hrOwnerId,
+        startDate: (dto.startDate && dto.startDate.trim()) ? new Date(dto.startDate) : new Date(),
+        targetDate: (dto.targetDate && dto.targetDate.trim()) ? new Date(dto.targetDate) : addDays(new Date(employee.hireDate), 30),
+        hrOwnerId: (dto.hrOwnerId && dto.hrOwnerId.trim()) ? dto.hrOwnerId : null,
         notes: dto.notes,
       },
     });

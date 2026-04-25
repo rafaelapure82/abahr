@@ -1,6 +1,7 @@
 import { differenceInMinutes, startOfDay, endOfDay } from 'date-fns';
 import { prisma } from '../../config/prisma';
 import redis from '../../config/redis';
+import { logger } from '../../config/logger';
 import { parsePagination, paginate } from '../../common/utils/response';
 import { NotFound, BadRequest } from '../../common/utils/apiError';
 import { notificationsService } from '../notifications/Notifications.service';
@@ -14,6 +15,46 @@ const LATE_THRESHOLD_MINS = 15; // 09:15 AM
 const EARTH_RADIUS_KM = 6371;
 
 export class AttendanceService {
+  
+  /**
+   * Public registration by Employee Code or Tax ID (Cedula)
+   */
+  async registerByExternalId(externalId: string, dto: CheckInDto) {
+    // 1. Find employee by code or taxId
+    const employee = await prisma.employee.findFirst({
+      where: {
+        OR: [
+          { employeeCode: externalId },
+          { taxId: externalId },
+          { nationalId: externalId }
+        ],
+        deletedAt: null,
+        employmentStatus: { not: 'TERMINATED' }
+      }
+    });
+
+    if (!employee) {
+      throw BadRequest('Empleado no encontrado con ese código o cédula');
+    }
+
+    const today = startOfDay(new Date());
+
+    // 2. Determine if we are checking in or checking out
+    const existing = await prisma.attendance.findUnique({
+      where: { employeeId_date: { employeeId: employee.id, date: today } }
+    });
+
+    if (!existing || !existing.checkIn) {
+      // Perform Check-In
+      return this.checkIn(employee.id, dto);
+    } else if (!existing.checkOut) {
+      // Perform Check-Out
+      return this.checkOut(employee.id, { note: dto.note });
+    } else {
+      throw BadRequest('Ya has registrado tu entrada y salida el día de hoy');
+    }
+  }
+
   
   /**
    * Smart Check-In (Atomic per day)
@@ -163,30 +204,58 @@ export class AttendanceService {
   }
 
   async findAll(query: AttendanceQuery) {
-    const { page, limit, skip } = parsePagination(query);
-    const where: any = {};
+    try {
+      const { page, limit, skip } = parsePagination(query);
+      const where: any = {};
 
-    if (query.employeeId) where.employeeId = query.employeeId;
-    if (query.status)     where.status = query.status;
-    if (query.startDate || query.endDate) {
-      where.date = {
-        gte: query.startDate ? new Date(query.startDate) : undefined,
-        lte: query.endDate ? new Date(query.endDate) : undefined,
-      };
+      if (query.employeeId) where.employeeId = query.employeeId;
+      if (query.status)     where.status = query.status;
+      
+      if (query.search && query.search.trim() !== '') {
+        const searchStr = query.search.trim();
+        where.OR = [
+          { employee: { firstName: { contains: searchStr, mode: 'insensitive' } } },
+          { employee: { lastName: { contains: searchStr, mode: 'insensitive' } } },
+          { employee: { employeeCode: { contains: searchStr, mode: 'insensitive' } } },
+          { employee: { nationalId: { contains: searchStr, mode: 'insensitive' } } },
+        ];
+      }
+
+      if (query.startDate) {
+        where.date = { ...(where.date || {}), gte: new Date(query.startDate) };
+      }
+      if (query.endDate) {
+        where.date = { ...(where.date || {}), lte: new Date(query.endDate) };
+      }
+
+      const [data, total] = await Promise.all([
+        prisma.attendance.findMany({ 
+          where, 
+          skip, 
+          take: limit, 
+          orderBy: { date: 'desc' },
+          include: { 
+            employee: { 
+              select: { 
+                firstName: true, 
+                lastName: true, 
+                employeeCode: true 
+              } 
+            } 
+          }
+        }),
+        prisma.attendance.count({ where }),
+      ]);
+
+      return { data, meta: paginate(total, page, limit) };
+    } catch (err: any) {
+      logger.error("Detailed error in AttendanceService.findAll:", {
+        message: err.message,
+        stack: err.stack,
+        query
+      });
+      throw err;
     }
-
-    const [data, total] = await Promise.all([
-      prisma.attendance.findMany({ 
-        where, 
-        skip, 
-        take: limit, 
-        orderBy: { date: 'desc' },
-        include: { employee: { select: { firstName: true, lastName: true, employeeCode: true } } }
-      }),
-      prisma.attendance.count({ where }),
-    ]);
-
-    return { data, meta: paginate(total, page, limit) };
   }
 
   async getMyToday(employeeId: string) {
@@ -222,6 +291,26 @@ export class AttendanceService {
     } catch (err) {}
 
     return result;
+  }
+
+  async update(id: string, data: Partial<ManualAttendanceDto>) {
+    const updateData: any = { ...data };
+    if (data.checkIn) updateData.checkIn = new Date(data.checkIn);
+    if (data.checkOut) updateData.checkOut = new Date(data.checkOut);
+    if (data.date) updateData.date = startOfDay(new Date(data.date));
+
+    const updated = await prisma.attendance.update({
+      where: { id },
+      data: updateData
+    });
+    
+    await redis.del('attendance:stats:today');
+    return updated;
+  }
+
+  async softDelete(id: string) {
+    await prisma.attendance.delete({ where: { id } }); // Since the UI doesn't usually show deleted ones, and there's no deletedAt on Attendance yet, I'll use hard delete or check if schema has deletedAt
+    await redis.del('attendance:stats:today');
   }
 }
 

@@ -28,11 +28,11 @@ export type CreateOnboardingTemplateDto = z.infer<typeof CreateOnboardingTemplat
 
 // ─── Onboarding Assignment ──────────────────────────────────────────────────
 export const AssignOnboardingDtoSchema = z.object({
-  employeeId: z.string().uuid(),
-  templateId: z.string().uuid().optional(), // If null, uses default template
-  startDate: z.string().datetime().optional(),
-  targetDate: z.string().datetime().optional(),
-  hrOwnerId: z.string().uuid().optional(),
+  employeeId: z.string(),
+  templateId: z.string().optional(), // If null, uses default template
+  startDate: z.string().optional(),
+  targetDate: z.string().optional(),
+  hrOwnerId: z.string().optional(),
   notes: z.string().optional(),
 });
 

@@ -43,6 +43,7 @@ export default function NewEmployeePage() {
     city: '',
     addressLine1: '',
     postalCode: '',
+    nationalId: '',
     familyMembers: [{ name: '', relationship: 'HIJO/A', idNumber: '' }]
   });
 
@@ -81,7 +82,7 @@ export default function NewEmployeePage() {
   };
 
   const canAdvance = () => {
-    if (currentStep === 'IDENTITY') return formData.firstName && formData.lastName && formData.email;
+    if (currentStep === 'IDENTITY') return formData.firstName && formData.lastName && formData.email && formData.nationalId;
     if (currentStep === 'PROFESSIONAL') return formData.jobTitle && formData.degreeTitle && previews.degree;
     if (currentStep === 'LOCATION') return formData.country && formData.city;
     if (currentStep === 'DOCUMENTS') return previews.idCard;
@@ -126,13 +127,14 @@ export default function NewEmployeePage() {
         baseSalary: parseFloat(formData.baseSalary) || 0,
         employmentStatus: 'ACTIVE',
         hireDate: new Date().toISOString(),
+        nationalId: formData.nationalId.trim(),
       };
 
       const response = await axios.post(`${API_URL}/employees`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      const empId = response.data.id;
+      const empId = response.data.data.id;
 
       const upload = async (file: File, type: string, fileName?: string) => {
         const d = new FormData(); 
@@ -189,6 +191,7 @@ export default function NewEmployeePage() {
               <FormField label="Apellido" name="lastName" value={formData.lastName} onChange={handleChange} required />
               <FormField label="Email Corporativo" name="email" value={formData.email} onChange={handleChange} required placeholder="ej@abatalent.com" />
               <FormField label="Teléfono" name="personalPhone" value={formData.personalPhone} onChange={handleChange} placeholder="+58 4XX XXXXXXX" />
+              <FormField label="Cédula de Identidad" name="nationalId" value={formData.nationalId} onChange={handleChange} required placeholder="V-12345678" />
             </div>
           </div>
         )}

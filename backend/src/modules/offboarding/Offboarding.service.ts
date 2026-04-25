@@ -113,9 +113,9 @@ export class OffboardingService {
         templateId: template.id,
         status: BoardingStatus.IN_PROGRESS,
         lastWorkDay,
-        exitInterviewAt: dto.exitInterviewAt ? new Date(dto.exitInterviewAt) : undefined,
+        exitInterviewAt: (dto.exitInterviewAt && dto.exitInterviewAt.trim()) ? new Date(dto.exitInterviewAt) : undefined,
         exitReason: dto.exitReason,
-        hrOwnerId: dto.hrOwnerId,
+        hrOwnerId: (dto.hrOwnerId && dto.hrOwnerId.trim()) ? dto.hrOwnerId : null,
         notes: dto.notes,
       },
     });
@@ -173,6 +173,19 @@ export class OffboardingService {
     return { ...offboarding, tasks };
   }
 
+  async update(id: string, dto: any) {
+    return prisma.offboarding.update({
+      where: { id },
+      data: {
+        lastWorkDay: dto.lastWorkDay ? new Date(dto.lastWorkDay) : undefined,
+        exitInterviewAt: dto.exitInterviewAt ? new Date(dto.exitInterviewAt) : undefined,
+        exitReason: dto.exitReason,
+        notes: dto.notes,
+        status: dto.status,
+      },
+    });
+  }
+
   /**
    * ── Update Task Status ───────────────────────────────────────────────────
    */
@@ -225,6 +238,32 @@ export class OffboardingService {
     }
 
     return updatedTask;
+  }
+
+  /**
+   * ── Export Report ────────────────────────────────────────────────────────
+   */
+  async exportReport() {
+    const data = await prisma.offboarding.findMany({
+      include: {
+        employee: { select: { firstName: true, lastName: true, jobTitle: true, email: true } },
+      },
+      orderBy: { lastWorkDay: 'desc' },
+    });
+
+    const csvRows = [
+      ['Empleado', 'Puesto', 'Motivo', 'Ultimo Dia', 'Estado', 'Notas'].join(','),
+      ...data.map(o => [
+        `"${o.employee.firstName} ${o.employee.lastName}"`,
+        `"${o.employee.jobTitle}"`,
+        `"${o.exitReason}"`,
+        o.lastWorkDay.toISOString().split('T')[0],
+        o.status,
+        `"${(o.notes || '').replace(/"/g, '""')}"`
+      ].join(','))
+    ];
+
+    return csvRows.join('\n');
   }
 }
 

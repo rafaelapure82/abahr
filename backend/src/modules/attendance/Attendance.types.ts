@@ -32,6 +32,7 @@ export const attendanceQuerySchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   status: z.nativeEnum(AttendanceStatus).optional(),
+  search: z.string().optional(),
 });
 
 export type CheckInDto = z.infer<typeof checkInSchema>;

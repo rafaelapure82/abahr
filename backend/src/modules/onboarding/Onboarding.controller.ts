@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { onboardingService } from './Onboarding.service';
-import { sendOk, sendCreated } from '../../common/utils/response';
+import { sendOk, sendCreated, sendPaginated } from '../../common/utils/response';
 
 export class OnboardingController {
   
@@ -24,8 +24,8 @@ export class OnboardingController {
   // ─── Onboarding Instances ──────────────────────────────────────────────────
 
   async list(req: Request, res: Response) {
-    const result = await onboardingService.findAll(req.query as any);
-    return sendOk(res, result);
+    const { data, meta } = await onboardingService.findAll(req.query as any);
+    return sendPaginated(res, data, meta);
   }
 
   async getById(req: Request, res: Response) {

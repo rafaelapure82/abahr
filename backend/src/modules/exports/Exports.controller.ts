@@ -21,4 +21,12 @@ export class ExportsController {
     pdfDoc.pipe(res);
     pdfDoc.end();
   });
+
+  static exportAttendance = asyncHandler(async (req: Request, res: Response) => {
+    const buffer = await exportsService.exportAttendanceToExcel(req.query);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=attendance_report.xlsx');
+    res.send(buffer);
+  });
 }

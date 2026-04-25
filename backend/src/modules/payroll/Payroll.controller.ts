@@ -38,6 +38,12 @@ export class PayrollController {
     const summary = await payrollService.getAccountingSummary(req.params.id);
     sendOk(res, summary);
   });
+
+  static getByEmployee = asyncHandler(async (req: Request, res: Response) => {
+    const employeeId = req.query.employeeId as string;
+    const items = await payrollService.findEmployeeItems(employeeId);
+    sendOk(res, items);
+  });
 }
 
 

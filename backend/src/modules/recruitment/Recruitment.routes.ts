@@ -24,6 +24,9 @@ router.get('/applications/:id', rbac(['READ:RECRUITMENT', 'MANAGE:ALL']), recrui
 router.get('/jobs/:jobId/applications', rbac(['READ:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.getJobApplications);
 router.post('/applications/:id/move', rbac(['MANAGE:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.moveStage);
 router.post('/applications/:id/interview', rbac(['MANAGE:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.scheduleInterview);
+router.get('/applications/:id/offer-letter', rbac(['READ:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.downloadOfferLetter);
+router.post('/applications/:id/sign', rbac(['MANAGE:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.signOfferLetter);
+router.get('/stats', rbac(['READ:RECRUITMENT', 'MANAGE:ALL']), recruitmentController.getStats);
 router.post('/candidates/:candidateId/resume', upload.single('resume'), recruitmentController.uploadResume);
 
 export { router as recruitmentRouter };

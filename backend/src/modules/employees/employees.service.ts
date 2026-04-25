@@ -31,7 +31,7 @@ const DETAIL_SELECT = {
   postalCode: true, country: true,
   emergencyName: true, emergencyPhone: true, emergencyRelation: true,
   baseSalary: true, currency: true, salaryFrequency: true,
-  bankName: true, bankAccountNumber: true, bankRoutingNumber: true, taxId: true,
+  bankName: true, bankAccountNumber: true, bankRoutingNumber: true, taxId: true, nationalId: true,
   probationEndDate: true, terminationDate: true, terminationReason: true,
   isRemote: true, timeZone: true, createdAt: true, updatedAt: true,
   position: { select: { id: true, title: true, code: true } },
@@ -69,8 +69,26 @@ export class EmployeesService {
       where.OR = [
         ...(where.OR || []),
         { taxId: { contains: query.document, mode: 'insensitive' } },
+        { nationalId: { contains: query.document, mode: 'insensitive' } },
         { bankAccountNumber: { contains: query.document, mode: 'insensitive' } },
+        { employeeCode: { contains: query.document, mode: 'insensitive' } },
       ];
+    }
+
+    // Salary Range
+    if (query.minSalary !== undefined || query.maxSalary !== undefined) {
+      where.baseSalary = {
+        gte: query.minSalary,
+        lte: query.maxSalary,
+      };
+    }
+
+    // Hire Date Range
+    if (query.hireDateStart || query.hireDateEnd) {
+      where.hireDate = {
+        gte: query.hireDateStart ? new Date(query.hireDateStart) : undefined,
+        lte: query.hireDateEnd ? new Date(query.hireDateEnd) : undefined,
+      };
     }
 
     const orderBy = { [query.sortBy ?? 'firstName']: query.sortOrder ?? 'asc' };

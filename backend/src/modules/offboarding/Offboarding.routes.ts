@@ -56,10 +56,22 @@ router.post(
 );
 
 router.patch(
+  '/:id',
+  rbac(['UPDATE:OFFBOARDING', 'MANAGE:ALL']),
+  asyncHandler(offboardingController.update)
+);
+
+router.patch(
   '/tasks/:taskId',
   rbac(['UPDATE:OFFBOARDING', 'MANAGE:ALL']),
   validate(UpdateOffboardingTaskDtoSchema),
   asyncHandler(offboardingController.updateTask)
+);
+
+router.get(
+  '/export/csv',
+  rbac(['READ:OFFBOARDING', 'MANAGE:ALL']),
+  asyncHandler(offboardingController.export)
 );
 
 export const offboardingRouter = router;

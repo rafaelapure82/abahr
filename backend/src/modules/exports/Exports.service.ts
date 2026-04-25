@@ -110,6 +110,47 @@ export class ExportsService {
     const pdfDoc = printer.createPdfKitDocument(docDefinition);
     return pdfDoc;
   }
+
+  async exportAttendanceToExcel(query: any) {
+    const where: any = {};
+    if (query.startDate) where.date = { gte: new Date(query.startDate) };
+    if (query.endDate)   where.date = { ...(where.date || {}), lte: new Date(query.endDate) };
+    if (query.status)    where.status = query.status;
+
+    const attendance = await prisma.attendance.findMany({
+      where,
+      include: { employee: true },
+      orderBy: { date: 'desc' }
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Attendance');
+
+    worksheet.columns = [
+      { header: 'Fecha', key: 'date', width: 15 },
+      { header: 'Empleado', key: 'employee', width: 25 },
+      { header: 'Código', key: 'code', width: 15 },
+      { header: 'Entrada', key: 'checkIn', width: 20 },
+      { header: 'Salida', key: 'checkOut', width: 20 },
+      { header: 'Horas', key: 'hours', width: 10 },
+      { header: 'Estado', key: 'status', width: 15 },
+    ];
+
+    attendance.forEach(att => {
+      worksheet.addRow({
+        date: att.date.toISOString().split('T')[0],
+        employee: `${att.employee.firstName} ${att.employee.lastName}`,
+        code: att.employee.employeeCode,
+        checkIn: att.checkIn ? att.checkIn.toLocaleTimeString() : '--',
+        checkOut: att.checkOut ? att.checkOut.toLocaleTimeString() : '--',
+        hours: att.hoursWorked || 0,
+        status: att.status,
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    return workbook.xlsx.writeBuffer();
+  }
 }
 
 export const exportsService = new ExportsService();

@@ -476,6 +476,7 @@ model Employee {
   bloodType     BloodType?
   nationality   String?
   ethnicity     String?
+  nationalId    String?        @unique // Cédula de Identidad
 
   // ── Contact ───────────────────────────────────────────────────────────────
   workPhone     String?
@@ -558,6 +559,7 @@ model Employee {
   disciplinaryActions DisciplinaryAction[]
   orgChartNodes       OrgChartNode[]
   hiringManagerJobs   JobPosting[]         @relation("HiringManagerJobs")
+  orgMovements        OrgMovement[]
 
   @@index([departmentId])
   @@index([managerId])
@@ -610,6 +612,8 @@ model Department {
   color        String? // hex for org chart UI
   icon         String?
   overtimeRate Float   @default(1.5)
+  budget       Decimal @default(0) @db.Decimal(14, 2)
+  costCenter   String?
 
   // Hierarchy
   parentId String?
@@ -630,6 +634,7 @@ model Department {
   orgChartNodes  OrgChartNode[]
   payrollPeriods PayrollPeriod[]
   jobPostings    JobPosting[]
+  history        DeptHistory[]
 
   @@index([parentId])
   @@index([deletedAt])
@@ -646,6 +651,7 @@ model Position {
   level        Int        @default(1) // seniority level
   minSalary    Decimal?   @db.Decimal(14, 2)
   maxSalary    Decimal?   @db.Decimal(14, 2)
+  targetCount  Int        @default(1) // planning/headcount
   isActive     Boolean    @default(true)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -676,6 +682,39 @@ model OfficeLocation {
   employees Employee[]
 
   @@map("office_locations")
+}
+
+// ── Movement / History Tracking ──────────────────────────────────────────
+model DeptHistory {
+  id           String     @id @default(uuid())
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  action       String // "MANAGER_CHANGE", "BUDGET_UPDATE", "RENAME"
+  previousValue String?
+  newValue      String?
+  changedById   String // User.id
+  effectiveDate DateTime   @default(now())
+  createdAt     DateTime   @default(now())
+
+  @@map("dept_history")
+}
+
+model OrgMovement {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  oldDeptId       String?
+  newDeptId       String?
+  oldPositionId   String?
+  newPositionId   String?
+  oldManagerId    String?
+  newManagerId    String?
+  reason          String?
+  effectiveDate   DateTime @default(now())
+  processedById   String // User.id
+  createdAt       DateTime @default(now())
+
+  @@map("org_movements")
 }
 
 // ── Organization Chart ─────────────────────────────────────────────────────
@@ -1098,6 +1137,7 @@ model JobApplication {
   appliedAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  hrSignature String? // Base64 signature image
   interviews Interview[]
 
   @@unique([jobId, candidateId])

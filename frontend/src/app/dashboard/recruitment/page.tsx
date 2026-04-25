@@ -1,0 +1,653 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import axios from "axios";
+import {
+  Briefcase,
+  Users,
+  Search,
+  Filter,
+  Plus,
+  Calendar,
+  MoreVertical,
+  ExternalLink,
+  ChevronRight,
+  BadgeCheck,
+  Clock,
+  TrendingUp,
+  XCircle,
+  CheckCircle2,
+} from "lucide-react";
+import Link from "next/link";
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
+
+function ActiveInterviewsModal({ interviews, onClose }: any) {
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+      <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in duration-300">
+        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-emerald-50/50">
+          <div>
+            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Entrevistas de Hoy</h2>
+            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1">Agenda para el {new Date().toLocaleDateString()}</p>
+          </div>
+          <button onClick={onClose} className="p-3 hover:bg-white rounded-2xl transition-all text-slate-400 hover:text-slate-600">
+            <XCircle className="w-8 h-8" />
+          </button>
+        </div>
+
+        <div className="p-8 max-h-[60vh] overflow-y-auto space-y-4">
+          {interviews.length === 0 ? (
+            <div className="py-12 text-center opacity-40">
+              <Calendar className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+              <p className="text-sm font-black uppercase tracking-widest text-slate-400">No hay entrevistas programadas para hoy</p>
+            </div>
+          ) : (
+            interviews.map((interview: any) => (
+              <div key={interview.id} className="p-5 bg-slate-50 rounded-3xl border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all">
+                <div className="flex items-center gap-5">
+                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex flex-col items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                    <span className="text-[10px] font-black uppercase leading-none">{new Date(interview.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-800">{interview.application.candidate.firstName} {interview.application.candidate.lastName}</h4>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">{interview.title}</p>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1.5 flex items-center gap-1">
+                      <Briefcase className="w-3 h-3" /> {interview.application.job.title}
+                    </p>
+                  </div>
+                </div>
+                <Link 
+                  href={`/dashboard/recruitment/candidates/${interview.application.id}`}
+                  onClick={onClose}
+                  className="p-3 bg-white rounded-xl text-slate-400 hover:text-primary hover:shadow-lg transition-all"
+                >
+                  <ExternalLink className="w-5 h-5" />
+                </Link>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="p-8 bg-slate-50/50 border-t border-slate-100 text-center">
+          <button onClick={onClose} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-primary transition-all">Cerrar Agenda</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function RecruitmentDashboard() {
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState({ status: "", search: "" });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInterviewsModalOpen, setIsInterviewsModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+    fetchDepartments();
+  }, [filter]);
+
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await axios.get(`${API_URL}/departments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDepartments(res.data.data || []);
+    } catch (err) {
+      console.error("Error fetching departments:", err);
+    }
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const [jobsRes, statsRes] = await Promise.all([
+        axios.get(`${API_URL}/recruitment/jobs`, { params: filter, headers }),
+        axios.get(`${API_URL}/recruitment/stats`, { headers }),
+      ]);
+
+      setJobs(jobsRes.data.data || []);
+      setStats(statsRes.data.data);
+    } catch (err) {
+      console.error("Error fetching recruitment data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateJob = async (formData: any) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      await axios.post(`${API_URL}/recruitment/jobs`, formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsModalOpen(false);
+      fetchData();
+    } catch (err) {
+      console.error("Create job failed:", err);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "OPEN":
+        return "bg-emerald-100 text-emerald-600 border-emerald-200";
+      case "DRAFT":
+        return "bg-slate-100 text-slate-500 border-slate-200";
+      case "CLOSED":
+        return "bg-red-100 text-red-600 border-red-200";
+      default:
+        return "bg-blue-100 text-blue-600 border-blue-200";
+    }
+  };
+
+  return (
+    <div className="space-y-8 pb-20 animate-in fade-in duration-700">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <Briefcase className="text-primary w-8 h-8" />
+            </div>
+            Gestión de Reclutamiento
+          </h1>
+          <p className="text-slate-500 mt-1 font-medium">
+            Encuentra y gestiona el mejor talento para tu organización.
+          </p>
+        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="btn-primary flex items-center gap-2 h-12 px-6 rounded-2xl shadow-lg shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+        >
+          <Plus className="w-5 h-5" />
+          Nueva Vacante
+        </button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCard
+          label="Vacantes Activas"
+          value={stats?.activeJobs || 0}
+          icon={<Briefcase className="text-blue-500" />}
+          trend="+2 este mes"
+          color="blue"
+        />
+        <StatCard
+          label="Total Candidatos"
+          value={stats?.totalApplications || 0}
+          icon={<Users className="text-purple-500" />}
+          trend="+15% vs mes ant."
+          color="purple"
+        />
+        <div onClick={() => setIsInterviewsModalOpen(true)} className="cursor-pointer">
+          <StatCard
+            label="Entrevistas Hoy"
+            value={stats?.interviewsTodayCount || 0}
+            icon={<Calendar className="text-emerald-500" />}
+            trend={stats?.nextInterviewTime ? `Próxima: ${new Date(stats.nextInterviewTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : "Sin pendientes"}
+            color="emerald"
+          />
+        </div>
+        <StatCard
+          label="Tiempo de Contratación"
+          value="18d"
+          icon={<Clock className="text-amber-500" />}
+          trend="-2d de mejora"
+          color="amber"
+        />
+      </div>
+
+      {/* Main Content: Vacancies List */}
+      <div className="card-premium p-0 overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/50 bg-white/80 backdrop-blur-md">
+        <div className="p-6 border-b border-slate-100 flex flex-wrap gap-4 items-center justify-between bg-slate-50/30">
+          <div className="flex items-center gap-4 flex-1 min-w-[300px]">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar vacantes por título o departamento..."
+                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none shadow-sm"
+                value={filter.search}
+                onChange={(e) =>
+                  setFilter({ ...filter, search: e.target.value })
+                }
+              />
+            </div>
+            <select
+              className="bg-white border border-slate-200 rounded-2xl text-sm font-bold px-4 py-3 outline-none focus:ring-4 focus:ring-primary/10 shadow-sm"
+              value={filter.status}
+              onChange={(e) => setFilter({ ...filter, status: e.target.value })}
+            >
+              <option value="">Todos los Estados</option>
+              <option value="OPEN">Publicadas</option>
+              <option value="DRAFT">Borradores</option>
+              <option value="CLOSED">Cerradas</option>
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <button className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-500 hover:text-primary transition-all shadow-sm">
+              <Filter className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                  Posición / Vacante
+                </th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                  Departamento
+                </th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                  Candidatos
+                </th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                  Estado
+                </th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                  Fecha Cierre
+                </th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-8 py-20 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                        Sincronizando vacantes...
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : jobs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-8 py-20 text-center">
+                    <div className="max-w-xs mx-auto">
+                      <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Briefcase className="w-10 h-10 text-slate-200" />
+                      </div>
+                      <p className="text-slate-400 font-bold text-sm">
+                        No se encontraron vacantes activas.
+                      </p>
+                      <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="text-primary text-xs font-black uppercase tracking-widest mt-2 hover:underline"
+                      >
+                        Crear primera vacante
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                jobs.map((job) => (
+                  <tr
+                    key={job.id}
+                    className="group hover:bg-slate-50/50 transition-colors"
+                  >
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center border border-slate-200 group-hover:border-primary/30 group-hover:bg-white transition-all">
+                          <BadgeCheck className="w-6 h-6 text-slate-400 group-hover:text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-slate-800 leading-tight">
+                            {job.title}
+                          </p>
+                          <p className="text-[11px] font-bold text-slate-400 mt-1">
+                            {job.code} • {job.location || "Remoto"}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className="text-xs font-bold text-slate-600 px-3 py-1 bg-slate-100 rounded-lg">
+                        {job.department?.name}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-2">
+                        <div className="flex -space-x-2">
+                          {[1, 2, 3].map((i) => (
+                            <div
+                              key={i}
+                              className="w-7 h-7 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[8px] font-black"
+                            >
+                              U{i}
+                            </div>
+                          ))}
+                        </div>
+                        <span className="text-xs font-black text-primary bg-primary/5 px-2 py-0.5 rounded-full">
+                          {job._count?.applications || 0}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border tracking-widest ${getStatusColor(job.status)}`}
+                      >
+                        {job.status === "OPEN"
+                          ? "Activa"
+                          : job.status === "DRAFT"
+                            ? "Borrador"
+                            : "Cerrada"}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span className="text-xs font-bold">
+                          {job.closingDate
+                            ? new Date(job.closingDate).toLocaleDateString()
+                            : "Abierta"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <Link
+                        href={`/dashboard/recruitment/${job.id}`}
+                        className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-primary hover:border-primary/30 hover:shadow-lg transition-all inline-flex"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {isModalOpen && (
+        <NewJobModal
+          departments={departments}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleCreateJob}
+        />
+      )}
+
+      {isInterviewsModalOpen && (
+        <ActiveInterviewsModal 
+          interviews={stats?.interviewsToday || []}
+          onClose={() => setIsInterviewsModalOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function NewJobModal({ departments, onClose, onSave }: any) {
+  const [formData, setFormData] = useState({
+    title: "",
+    departmentId: "",
+    description: "",
+    requirements: "",
+    responsibilities: "",
+    salaryMin: "",
+    salaryMax: "",
+    currency: "USD",
+    location: "",
+    isRemote: false,
+    openingsCount: 1,
+    status: "OPEN",
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      ...formData,
+      salaryMin: formData.salaryMin ? Number(formData.salaryMin) : undefined,
+      salaryMax: formData.salaryMax ? Number(formData.salaryMax) : undefined,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in duration-300">
+        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+              Nueva Vacante
+            </h2>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+              Completa los detalles del puesto
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-3 hover:bg-white rounded-2xl transition-all text-slate-400 hover:text-slate-600 shadow-sm border border-transparent hover:border-slate-100"
+          >
+            <XCircle className="w-8 h-8" />
+          </button>
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-8 space-y-8"
+        >
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                  Título del Puesto
+                </label>
+                <input
+                  required
+                  type="text"
+                  className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
+                  placeholder="Ej: Senior Fullstack Developer"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                  Departamento
+                </label>
+                <select
+                  required
+                  className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
+                  value={formData.departmentId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, departmentId: e.target.value })
+                  }
+                >
+                  <option value="">Seleccionar Departamento</option>
+                  {departments.map((dept: any) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                    Salario Min
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
+                    value={formData.salaryMin}
+                    onChange={(e) =>
+                      setFormData({ ...formData, salaryMin: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                    Salario Max
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
+                    value={formData.salaryMax}
+                    onChange={(e) =>
+                      setFormData({ ...formData, salaryMax: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                  Ubicación
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
+                  placeholder="Ej: Madrid, España"
+                  value={formData.location}
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
+                />
+              </div>
+
+              <div
+                className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border-2 border-transparent hover:border-primary/10 transition-all cursor-pointer"
+                onClick={() =>
+                  setFormData({ ...formData, isRemote: !formData.isRemote })
+                }
+              >
+                <div
+                  className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${formData.isRemote ? "bg-primary border-primary text-white" : "border-slate-300"}`}
+                >
+                  {formData.isRemote && <CheckCircle2 className="w-4 h-4" />}
+                </div>
+                <span className="text-sm font-bold text-slate-700">
+                  Trabajo Remoto
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                  Número de Vacantes
+                </label>
+                <input
+                  type="number"
+                  className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
+                  value={formData.openingsCount}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      openingsCount: Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                Descripción del Puesto
+              </label>
+              <textarea
+                required
+                rows={4}
+                className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none resize-none"
+                placeholder="Describe las funciones principales..."
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                Requisitos
+              </label>
+              <textarea
+                rows={3}
+                className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none resize-none"
+                placeholder="Experiencia, tecnologías, idiomas..."
+                value={formData.requirements}
+                onChange={(e) =>
+                  setFormData({ ...formData, requirements: e.target.value })
+                }
+              />
+            </div>
+          </div>
+        </form>
+
+        <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex gap-4">
+          <button
+            onClick={onClose}
+            className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white transition-all border border-transparent hover:border-slate-200"
+          >
+            Descartar
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="flex-[2] h-14 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            Publicar Vacante Ahora
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon, trend, color }: any) {
+  const colorMap: any = {
+    blue: "from-blue-500/20 to-blue-500/5 text-blue-600",
+    purple: "from-purple-500/20 to-purple-500/5 text-purple-600",
+    emerald: "from-emerald-500/20 to-emerald-500/5 text-emerald-600",
+    amber: "from-amber-500/20 to-amber-500/5 text-amber-600",
+  };
+
+  return (
+    <div className="card-premium p-6 group hover:scale-[1.02] transition-all cursor-default">
+      <div className="flex justify-between items-start mb-6">
+        <div
+          className={`p-4 rounded-2xl bg-gradient-to-br ${colorMap[color]} group-hover:scale-110 transition-transform`}
+        >
+          {icon}
+        </div>
+        <div className="flex flex-col items-end">
+          <div className="flex items-center gap-1 text-emerald-500">
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              {trend}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h4 className="text-3xl font-black text-slate-800 tracking-tight">
+          {value}
+        </h4>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+          {label}
+        </p>
+      </div>
+    </div>
+  );
+}

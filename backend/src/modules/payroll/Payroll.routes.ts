@@ -26,6 +26,13 @@ payrollRouter.get(
 );
 
 payrollRouter.get(
+  '/history', 
+  rbac(['READ:PAYROLL', 'SELF:PAYROLL', 'MANAGE:ALL']), 
+  validate(payrollQuerySchema, 'query'), 
+  PayrollController.getByEmployee
+);
+
+payrollRouter.get(
   '/:id', 
   rbac(['READ:PAYROLL', 'MANAGE:ALL']), 
   PayrollController.show

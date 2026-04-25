@@ -71,9 +71,38 @@ export class DepartmentsService {
       await this.validateManagerUniqueness(dto.headId);
     }
 
-    return prisma.department.update({
-      where: { id },
-      data: dto as any
+    return prisma.$transaction(async (tx) => {
+      const updated = await tx.department.update({
+        where: { id },
+        data: dto as any
+      });
+
+      // Log changes for specific fields
+      if (dto.headId && dto.headId !== dept.headId) {
+        await tx.deptHistory.create({
+          data: {
+            departmentId: id,
+            action: 'MANAGER_CHANGE',
+            previousValue: dept.headId,
+            newValue: dto.headId,
+            changedById: (dto as any).userId || 'system'
+          }
+        });
+      }
+
+      if (dto.budget !== undefined && Number(dto.budget) !== Number(dept.budget)) {
+        await tx.deptHistory.create({
+          data: {
+            departmentId: id,
+            action: 'BUDGET_UPDATE',
+            previousValue: dept.budget?.toString(),
+            newValue: dto.budget.toString(),
+            changedById: (dto as any).userId || 'system'
+          }
+        });
+      }
+
+      return updated;
     });
   }
 
@@ -182,10 +211,19 @@ export class DepartmentsService {
 
     // If level is changing, we might want to log it or check implications, 
     // but strict validation happens at the Employee-Manager link level.
-    
     return prisma.position.update({
       where: { id },
       data: dto as any
+    });
+  }
+
+  async removePosition(id: string) {
+    const count = await prisma.employee.count({ where: { positionId: id, deletedAt: null } });
+    if (count > 0) throw BadRequest('Cannot delete position with active employees.');
+
+    await prisma.position.update({
+      where: { id },
+      data: { deletedAt: new Date() }
     });
   }
 
@@ -245,6 +283,61 @@ export class DepartmentsService {
     return prisma.officeLocation.update({
       where: { id },
       data: dto as any
+    });
+  }
+
+  async removeLocation(id: string) {
+    await prisma.officeLocation.delete({ where: { id } });
+  }
+
+  async bulkMoveEmployees(dto: any, processedById: string) {
+    const { employeeIds, newDeptId, newPositionId, newManagerId, reason, effectiveDate } = dto;
+
+    return prisma.$transaction(async (tx) => {
+      const results = [];
+
+      for (const empId of employeeIds) {
+        const emp = await tx.employee.findUnique({ where: { id: empId } });
+        if (!emp) continue;
+
+        // Record movement
+        await tx.orgMovement.create({
+          data: {
+            employeeId: empId,
+            oldDeptId: emp.departmentId,
+            newDeptId: newDeptId,
+            oldPositionId: emp.positionId,
+            newPositionId: newPositionId,
+            oldManagerId: emp.managerId,
+            newManagerId: newManagerId,
+            reason,
+            effectiveDate,
+            processedById
+          }
+        });
+
+        // Update employee
+        const updated = await tx.employee.update({
+          where: { id: empId },
+          data: {
+            departmentId: newDeptId !== undefined ? newDeptId : undefined,
+            positionId: newPositionId !== undefined ? newPositionId : undefined,
+            managerId: newManagerId !== undefined ? newManagerId : undefined,
+          }
+        });
+
+        results.push(updated);
+      }
+
+      return results;
+    });
+  }
+
+  async getHistory(departmentId: string) {
+    return prisma.deptHistory.findMany({
+      where: { departmentId },
+      include: { department: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' }
     });
   }
 }

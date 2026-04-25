@@ -12,7 +12,11 @@ import {
 export const attendanceRouter = Router();
 
 
-// All routes require authentication
+
+// Public Check-In/Out (QR/Manual)
+attendanceRouter.post('/public-register', AttendanceController.publicRegister);
+
+// All routes below require authentication
 attendanceRouter.use(authJWT);
 
 // ── Self Service ────────────────────────────────────────────────────────────
@@ -44,6 +48,24 @@ attendanceRouter.get(
   '/stats', 
   rbac(['READ:ATTENDANCE', 'MANAGE:ALL']), 
   AttendanceController.stats
+);
+
+attendanceRouter.post(
+  '/', 
+  rbac(['MANAGE:ATTENDANCE', 'MANAGE:ALL']), 
+  AttendanceController.create
+);
+
+attendanceRouter.patch(
+  '/:id', 
+  rbac(['MANAGE:ATTENDANCE', 'MANAGE:ALL']), 
+  AttendanceController.update
+);
+
+attendanceRouter.delete(
+  '/:id', 
+  rbac(['MANAGE:ATTENDANCE', 'MANAGE:ALL']), 
+  AttendanceController.remove
 );
 
 

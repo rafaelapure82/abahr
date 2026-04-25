@@ -282,6 +282,19 @@ export class PayrollService {
     return { data, meta: paginate(total, page, limit) };
   }
 
+  async findEmployeeItems(employeeId: string) {
+    return prisma.payrollItem.findMany({
+      where: { employeeId },
+      include: {
+        payroll: true,
+        payrollPeriod: true,
+        bonuses: true,
+        deductions: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
   async getDetails(id: string) {
     const payroll = await prisma.payroll.findUnique({
       where: { id },

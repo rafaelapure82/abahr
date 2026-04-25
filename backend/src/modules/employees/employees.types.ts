@@ -14,7 +14,14 @@ export const employeeQuerySchema = z.object({
   status: z.nativeEnum(EmploymentStatus).optional(),
   type: z.nativeEnum(EmploymentType).optional(),
   managerId: z.string().uuid().optional(),
-  sortBy: z.enum(['firstName', 'lastName', 'hireDate', 'jobTitle', 'createdAt']).default('firstName'),
+  
+  // Advanced Filter Additions
+  minSalary: z.coerce.number().optional(),
+  maxSalary: z.coerce.number().optional(),
+  hireDateStart: z.string().optional(),
+  hireDateEnd: z.string().optional(),
+
+  sortBy: z.enum(['firstName', 'lastName', 'hireDate', 'jobTitle', 'createdAt', 'baseSalary']).default('firstName'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 export type EmployeeQuery = z.infer<typeof employeeQuerySchema>;
@@ -54,6 +61,7 @@ export const createEmployeeSchema = z.object({
   personalPhone: z.string().optional(),
   workPhone: z.string().optional(),
   personalEmail: z.string().email().optional(),
+  nationalId: z.string().optional(),
 
   // Address
   addressLine1: z.string().optional(),

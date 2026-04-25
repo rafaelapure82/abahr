@@ -42,6 +42,17 @@ export class DepartmentsController {
     sendNoContent(res);
   });
 
+  static getHistory = asyncHandler(async (req: Request, res: Response) => {
+    const history = await departmentsService.getHistory(req.params.id);
+    sendOk(res, history);
+  });
+
+  static bulkMove = asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id || 'system';
+    const result = await departmentsService.bulkMoveEmployees(req.body, userId);
+    sendOk(res, result, 'Employees moved successfully');
+  });
+
   // ── Positions ──────────────────────────────────────────────────────────────
 
   static listPositions = asyncHandler(async (req: Request, res: Response) => {
@@ -57,6 +68,11 @@ export class DepartmentsController {
   static updatePosition = asyncHandler(async (req: Request, res: Response) => {
     const position = await departmentsService.updatePosition(req.params.id, req.body);
     sendOk(res, position, 'Position updated successfully');
+  });
+
+  static removePosition = asyncHandler(async (req: Request, res: Response) => {
+    await departmentsService.removePosition(req.params.id);
+    sendNoContent(res);
   });
 
   // ── Office Locations ────────────────────────────────────────────────────────
@@ -75,7 +91,9 @@ export class DepartmentsController {
     const location = await departmentsService.updateLocation(req.params.id, req.body);
     sendOk(res, location, 'Location updated successfully');
   });
+
+  static removeLocation = asyncHandler(async (req: Request, res: Response) => {
+    await departmentsService.removeLocation(req.params.id);
+    sendNoContent(res);
+  });
 }
-
-
-
