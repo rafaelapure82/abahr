@@ -19,7 +19,8 @@ const fileFilter = (req: any, file: any, cb: any) => {
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'image/jpeg',
-    'image/png'
+    'image/png',
+    'image/svg+xml'
   ];
   
   if (allowedTypes.includes(file.mimetype)) {

@@ -48,11 +48,13 @@ export default function OnboardingPage() {
         axios.get(`${API_URL}/employees`, { headers })
       ]);
       
-      setOnboardings(onRes.data.data || []);
-      setTemplates(tempRes.data.data || []);
+      setOnboardings(onRes.data.data?.data || onRes.data.data || []);
+      setTemplates(tempRes.data.data?.data || tempRes.data.data || []);
       // Only show employees that DON'T have onboarding yet for new assignments
-      const assignedIds = (onRes.data.data || []).map((o:any) => o.employeeId);
-      setEmployees((empRes.data.data || []).filter((e:any) => !assignedIds.includes(e.id)));
+      const onboardingsList = onRes.data.data?.data || onRes.data.data || [];
+      const assignedIds = onboardingsList.map((o:any) => o.employeeId);
+      const employeesList = empRes.data.data?.data || empRes.data.data || [];
+      setEmployees(employeesList.filter((e:any) => !assignedIds.includes(e.id)));
     } catch (error) {
       console.error("Error fetching onboarding data:", error);
     } finally {
@@ -161,7 +163,7 @@ export default function OnboardingPage() {
 
       <div className="card-premium bg-white p-2 min-h-[400px]">
         {loading ? (
-          <div className="py-20 text-center"><Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" /></div>
+          <OnboardingSkeleton />
         ) : (
           <div className="overflow-x-auto">
             {activeTab !== 'templates' ? (
@@ -437,6 +439,28 @@ function FormSelect({ label, value, onChange, options, required, emptyLabel = "S
         <option value="">{emptyLabel}</option>
         {options.map((opt: any) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
       </select>
+    </div>
+  );
+}
+
+function OnboardingSkeleton() {
+  return (
+    <div className="p-8 space-y-6">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-3xl border border-slate-50">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-4 w-32 bg-slate-100 animate-pulse rounded-md" />
+              <div className="h-3 w-20 bg-slate-100 animate-pulse rounded-md" />
+            </div>
+          </div>
+          <div className="flex gap-12">
+            <div className="h-2 w-32 bg-slate-100 animate-pulse rounded-full" />
+            <div className="h-6 w-24 bg-slate-100 animate-pulse rounded-full" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

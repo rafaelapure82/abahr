@@ -20,6 +20,7 @@ const menuItems = [
   { icon: Bell, label: 'Onboarding', href: '/dashboard/onboarding', roles: ['ADMIN'] },
   { icon: LogOut, label: 'Offboarding', href: '/dashboard/offboarding', roles: ['ADMIN'] },
   { icon: CreditCard, label: 'Payroll', href: '/dashboard/payroll', roles: ['ADMIN'] },
+  { icon: LayoutDashboard, label: 'Reportes', href: '/dashboard/reports', roles: ['ADMIN'] },
   { icon: ShieldAlert, label: 'Auditoría', href: '/dashboard/audit-logs', roles: ['ADMIN'] },
   { icon: Settings, label: 'Configuración', href: '/dashboard/settings', roles: ['ADMIN'] },
   { icon: UserIcon, label: 'Mi Perfil', href: '/dashboard/profile', roles: ['ADMIN', 'USER'] },
@@ -28,6 +29,13 @@ const menuItems = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, hasRole } = useAuth();
   const pathname = usePathname();
+
+  const getAvatarUrl = (url: string | null) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const uploadsBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1').replace('/api/v1', '/uploads');
+    return `${uploadsBase}/${url}`;
+  };
 
   return (
     <RoleGuard>
@@ -93,20 +101,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             <div className="flex items-center gap-6">
-              <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] leading-none mb-1">Bienvenido de vuelta</span>
+                <span className="text-sm font-black text-slate-900 leading-none">{user?.employee?.firstName || user?.email?.split('@')[0]}</span>
+              </div>
+
+              <button className="relative p-2 text-slate-400 hover:text-primary transition-all hover:scale-110">
                 <Bell className="w-6 h-6" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
               </button>
               
-              <div className="flex items-center gap-3 border-l pl-6 border-slate-100">
-                <div className="text-right">
-                  <p className="text-sm font-bold text-slate-900">{user?.email}</p>
-                  <p className="text-xs text-slate-500 capitalize">{user?.roles[0]?.role?.name || 'Usuario'}</p>
+              <Link 
+                href="/dashboard/profile"
+                className="flex items-center gap-3 border-l pl-6 border-slate-100 group"
+              >
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-black text-slate-900 group-hover:text-primary transition-colors">{user?.email}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{user?.roles?.[0]?.role?.name || 'Usuario'}</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200 overflow-hidden">
-                  <UserIcon className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 overflow-hidden group-hover:border-primary/30 group-hover:shadow-lg transition-all">
+                  {user?.employee?.avatarUrl ? (
+                    <img src={getAvatarUrl(user.employee.avatarUrl)} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon className="w-6 h-6" />
+                  )}
                 </div>
-              </div>
+              </Link>
             </div>
           </header>
 

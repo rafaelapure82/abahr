@@ -18,7 +18,7 @@ export class RecruitmentService {
     const { page, limit, skip } = parsePagination(query);
     const where: any = { deletedAt: null };
     
-    if (query.status && query.status !== '') where.status = query.status;
+    if (query.status) where.status = query.status;
     if (query.departmentId) where.departmentId = query.departmentId;
     
     if (query.search) {
@@ -343,21 +343,6 @@ export class RecruitmentService {
     return prisma.jobApplication.update({
       where: { id: applicationId },
       data: { hrSignature: signatureData }
-    });
-  }
-
-  async scheduleInterview(applicationId: string, data: any) {
-    return prisma.interview.create({
-      data: {
-        applicationId,
-        title: data.title,
-        scheduledAt: new Date(data.scheduledAt),
-        durationMins: data.durationMins || 60,
-        type: data.type || 'VIDEO',
-        location: data.location,
-        notes: data.notes,
-        interviewerIds: data.interviewerIds || []
-      }
     });
   }
 }

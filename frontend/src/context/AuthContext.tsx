@@ -9,7 +9,12 @@ interface User {
   email: string;
   isActive: boolean;
   roles: any[];
-  employee?: { id: string };
+  employee?: { 
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+  };
 }
 
 interface AuthContextType {
@@ -18,6 +23,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: any) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   hasRole: (role: string) => boolean;
   hasPermission: (permission: string) => boolean;
 }
@@ -75,8 +81,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/auth/login');
   };
 
+  const refreshUser = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const { data } = response.data;
+      localStorage.setItem('user_data', JSON.stringify(data));
+      setUser(data);
+    } catch (error) {
+      console.error("Refresh user error", error);
+    }
+  };
+
   const hasRole = (roleName: string) => {
-    if (!user) return false;
+    if (!user || !user.roles) return false;
     return user.roles.some((r: any) => 
       r.role.name === roleName || r.role.name === 'SUPER_ADMIN'
     );
@@ -95,6 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading, 
       login, 
       logout, 
+      refreshUser,
       hasRole, 
       hasPermission 
     }}>

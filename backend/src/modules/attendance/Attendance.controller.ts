@@ -41,6 +41,11 @@ export class AttendanceController {
     res.json({ success: true, data: stats });
   });
 
+  static reportStats = asyncHandler(async (req: Request, res: Response) => {
+    const stats = await attendanceService.getReportStats(req.query);
+    res.json({ success: true, data: stats });
+  });
+
   static create = asyncHandler(async (req: Request, res: Response) => {
     const attendance = await attendanceService.createManual(req.body);
     sendCreated(res, attendance, 'Registro de asistencia creado');

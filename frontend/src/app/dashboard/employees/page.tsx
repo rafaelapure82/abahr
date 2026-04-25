@@ -50,7 +50,7 @@ export default function EmployeeListPage() {
         headers: { Authorization: `Bearer ${token}` },
         params
       });
-      setEmployees(response.data.data);
+      setEmployees(response.data.data?.data || response.data.data || []);
     } catch (error) {
       console.error("Error fetching employees:", error);
     } finally {
@@ -214,10 +214,7 @@ export default function EmployeeListPage() {
       {/* Table Container */}
       <div className="card-premium bg-white/90 backdrop-blur-xl border-slate-100">
         {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-4">
-            <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="font-bold tracking-tight">Cargando directorio...</p>
-          </div>
+          <EmployeeSkeleton />
         ) : employees.length === 0 ? (
           <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-4">
             <UserX className="w-16 h-16 opacity-20" />
@@ -278,6 +275,9 @@ export default function EmployeeListPage() {
                           <Link href={`/dashboard/employees/edit/${emp.id}`} className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors border-b border-slate-50">
                             <Edit3 className="w-4 h-4 text-amber-500" /> Editar Datos
                           </Link>
+                          <Link href={`/dashboard/offboarding?employeeId=${emp.id}`} className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors border-b border-slate-50">
+                            <UserX className="w-4 h-4 text-red-500" /> Iniciar Salida
+                          </Link>
                           <Link href={`/dashboard/attendance?emp=${emp.id}`} className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">
                             <Calendar className="w-4 h-4 text-teal-500" /> Ver Asistencia
                           </Link>
@@ -291,6 +291,28 @@ export default function EmployeeListPage() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function EmployeeSkeleton() {
+  return (
+    <div className="space-y-4 p-8">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-50">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-4 w-32 bg-slate-100 animate-pulse rounded-md" />
+              <div className="h-3 w-20 bg-slate-100 animate-pulse rounded-md" />
+            </div>
+          </div>
+          <div className="space-y-2 text-right">
+            <div className="h-4 w-24 bg-slate-100 animate-pulse rounded-md ml-auto" />
+            <div className="h-3 w-16 bg-slate-100 animate-pulse rounded-md ml-auto" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

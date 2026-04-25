@@ -42,8 +42,8 @@ export class AuthyUsersController {
 
   getMe = asyncHandler(async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
-    // We could add more details here
-    sendOk(res, (req as any).user, 'User profile retrieved');
+    const user = await authyUsersService.findById(userId);
+    sendOk(res, user, 'User profile retrieved');
   });
 
   getPermissions = asyncHandler(async (req: Request, res: Response) => {

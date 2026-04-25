@@ -213,6 +213,36 @@ export class AuthyUsersService {
     if (!user) return [];
     return await this.cacheUserPermissions(userId, user);
   }
+  async findById(id: string) {
+    const user = await prisma.user.findUnique({
+      where: { id, deletedAt: null },
+      include: {
+        employee: { 
+          select: { 
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true
+          } 
+        },
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: { permission: true }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!user) throw NotFound('User not found');
+    const { passwordHash, mfaSecret, ...userResponse } = user;
+    return userResponse;
+  }
 
   /**
    * ── MFA / 2FA ─────────────────────────────────────────────────────────────

@@ -53,9 +53,10 @@ export class OffboardingService {
 
   async findAll(query: OffboardingQuery) {
     const { page, limit, skip } = parsePagination(query);
-    const where: any = {};
-    if (query.employeeId) where.employeeId = query.employeeId;
+    const where: any = { deletedAt: null };
+    
     if (query.status) where.status = query.status;
+    if (query.departmentId) where.departmentId = query.departmentId;
 
     const [data, total] = await Promise.all([
       prisma.offboarding.findMany({
@@ -246,7 +247,7 @@ export class OffboardingService {
   async exportReport() {
     const data = await prisma.offboarding.findMany({
       include: {
-        employee: { select: { firstName: true, lastName: true, jobTitle: true, email: true } },
+        employee: { select: { firstName: true, lastName: true, jobTitle: true, workEmail: true } },
       },
       orderBy: { lastWorkDay: 'desc' },
     });
@@ -257,7 +258,7 @@ export class OffboardingService {
         `"${o.employee.firstName} ${o.employee.lastName}"`,
         `"${o.employee.jobTitle}"`,
         `"${o.exitReason}"`,
-        o.lastWorkDay.toISOString().split('T')[0],
+        o.lastWorkDay ? o.lastWorkDay.toISOString().split('T')[0] : '--',
         o.status,
         `"${(o.notes || '').replace(/"/g, '""')}"`
       ].join(','))

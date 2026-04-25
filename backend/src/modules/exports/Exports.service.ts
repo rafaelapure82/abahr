@@ -1,9 +1,16 @@
 import * as ExcelJS from 'exceljs';
-const PdfPrinter = require('pdfmake');
-import { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { prisma } from '../../config/prisma';
 import { NotFound } from '../../common/utils/apiError';
 import { logger } from '../../config/logger';
+import { 
+  startOfDay, endOfDay, 
+  startOfWeek, endOfWeek, 
+  startOfMonth, endOfMonth, 
+  startOfYear, endOfYear 
+} from 'date-fns';
+
+
+import { TDocumentDefinitions } from 'pdfmake/interfaces';
 
 export class ExportsService {
   
@@ -68,7 +75,7 @@ export class ExportsService {
     if (!payroll) throw NotFound('Payroll');
 
     const fonts = {
-      Roboto: {
+      Helvetica: {
         normal: 'Helvetica', 
         bold: 'Helvetica-Bold',
         italics: 'Helvetica-Oblique',
@@ -76,6 +83,7 @@ export class ExportsService {
       }
     };
 
+    const PdfPrinter = require('pdfmake');
     const printer = new PdfPrinter(fonts);
 
     const docDefinition: TDocumentDefinitions = {
@@ -150,6 +158,140 @@ export class ExportsService {
 
     worksheet.getRow(1).font = { bold: true };
     return workbook.xlsx.writeBuffer();
+  }
+
+  // ── Advanced Attendance Report (PDF) ───────────────────────────────────────
+
+  async exportAttendanceReportPdf(params: { 
+    employeeId?: string, 
+    departmentId?: string, 
+    period: 'daily' | 'weekly' | 'monthly' | 'annual',
+    date?: string 
+  }) {
+    const where: any = {};
+    if (params.employeeId)   where.employeeId = params.employeeId;
+    if (params.departmentId) where.employee = { departmentId: params.departmentId };
+    
+    // Period logic
+    const baseDate = params.date ? new Date(params.date) : new Date();
+    if (params.period === 'daily') {
+      where.date = { gte: startOfDay(baseDate), lte: endOfDay(baseDate) };
+    } else if (params.period === 'weekly') {
+      where.date = { gte: startOfWeek(baseDate), lte: endOfWeek(baseDate) };
+    } else if (params.period === 'monthly') {
+      where.date = { gte: startOfMonth(baseDate), lte: endOfMonth(baseDate) };
+    } else if (params.period === 'annual') {
+      where.date = { gte: startOfYear(baseDate), lte: endOfYear(baseDate) };
+    }
+    
+    const attendance = await prisma.attendance.findMany({
+      where,
+      include: { 
+        employee: { include: { department: true } } 
+      },
+      orderBy: { date: 'asc' }
+    });
+
+    if (attendance.length === 0) {
+      logger.warn(`No attendance records found for report: ${JSON.stringify(params)}`);
+    }
+
+    const fonts = {
+      Helvetica: {
+        normal: 'Helvetica', 
+        bold: 'Helvetica-Bold',
+        italics: 'Helvetica-Oblique',
+        bolditalics: 'Helvetica-BoldOblique'
+      }
+    };
+
+    const PdfPrinter = require('pdfmake');
+    const printer = new PdfPrinter(fonts);
+    
+    const totalHours = attendance.reduce((sum, a) => sum + Number(a.hoursWorked || 0), 0);
+    const totalDays = attendance.length;
+    const lates = attendance.filter(a => a.status === 'LATE').length;
+
+    try {
+      const docDefinition: TDocumentDefinitions = {
+        content: [
+          { text: 'REPORTE DE ASISTENCIA - ABA TALENT HR', style: 'header', alignment: 'center' },
+          { text: `Periodo: ${params.period.toUpperCase()}`, margin: [0, 5, 0, 15], alignment: 'center' },
+          
+          {
+            columns: [
+              { text: `Filtro: ${params.employeeId ? 'Empleado Individual' : params.departmentId ? 'Departamento' : 'General'}`, bold: true },
+              { text: `Fecha Generación: ${new Date().toLocaleDateString()}`, alignment: 'right' }
+            ]
+          },
+          { canvas: [{ type: 'line', x1: 0, y1: 5, x2: 515, y2: 5, lineWidth: 1, lineColor: '#eeeeee' }], margin: [0, 10, 0, 20] },
+  
+          // Stats Summary
+          {
+            table: {
+              widths: ['*', '*', '*'],
+              body: [
+                [
+                  { text: 'Total Horas', style: 'statLabel' },
+                  { text: 'Días Presente', style: 'statLabel' },
+                  { text: 'Retrasos', style: 'statLabel' }
+                ],
+                [
+                  { text: `${totalHours.toFixed(1)}h`, style: 'statValue' },
+                  { text: totalDays.toString(), style: 'statValue' },
+                  { text: lates.toString(), style: 'statValue', color: lates > 0 ? '#ef4444' : '#10b981' }
+                ]
+              ]
+            },
+            layout: 'noBorders',
+            margin: [0, 0, 0, 30]
+          },
+  
+          // Detailed Table
+          {
+            table: {
+              headerRows: 1,
+              widths: ['auto', '*', 'auto', 'auto', 'auto'],
+              body: [
+                [
+                  { text: 'FECHA', style: 'tableHeader' },
+                  { text: 'EMPLEADO', style: 'tableHeader' },
+                  { text: 'ENTRADA', style: 'tableHeader' },
+                  { text: 'SALIDA', style: 'tableHeader' },
+                  { text: 'HORAS', style: 'tableHeader' }
+                ],
+                ...attendance.length > 0 ? attendance.map(a => [
+                  { text: a.date.toISOString().split('T')[0], fontSize: 9 },
+                  { text: `${a.employee.firstName} ${a.employee.lastName}`, fontSize: 9 },
+                  { text: a.checkIn ? a.checkIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--', fontSize: 9 },
+                  { text: a.checkOut ? a.checkOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--', fontSize: 9 },
+                  { text: `${a.hoursWorked || 0}h`, fontSize: 9, bold: true }
+                ]) : [[{ text: 'No hay registros en este periodo', colSpan: 5, alignment: 'center' as any, margin: [0, 10, 0, 10], color: '#64748b' }, {}, {}, {}, {}]]
+              ]
+            },
+            layout: {
+              hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length) ? 2 : 1,
+              vLineWidth: () => 0,
+              hLineColor: (i: number) => (i === 0) ? '#4f46e5' : '#eeeeee',
+              paddingTop: () => 8,
+              paddingBottom: () => 8
+            }
+          }
+        ],
+        styles: {
+          header: { fontSize: 22, bold: true, color: '#1e293b' },
+          statLabel: { fontSize: 10, color: '#64748b', bold: true, alignment: 'center' },
+          statValue: { fontSize: 18, bold: true, color: '#1e293b', alignment: 'center', margin: [0, 5, 0, 0] },
+          tableHeader: { fontSize: 10, bold: true, color: '#4f46e5', margin: [0, 5, 0, 5] }
+        },
+        defaultStyle: { font: 'Helvetica' }
+      };
+  
+      return printer.createPdfKitDocument(docDefinition);
+    } catch (err: any) {
+      logger.error('Error generating PDF doc definition:', err);
+      throw err;
+    }
   }
 }
 

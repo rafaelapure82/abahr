@@ -7,6 +7,8 @@ import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import { createServer, Server } from 'http';
 import { Server as SocketIO } from 'socket.io';
+import path from 'path';
+
 
 // Config
 import { env } from './config/env';
@@ -40,6 +42,8 @@ import { webhooksRouter }      from './modules/webhooks/Webhooks.routes';
 import holidaysRouter        from './modules/holidays/Holidays.routes';
 import exportsRouter         from './modules/exports/Exports.routes';
 import { auditLogsRouter }   from './modules/audit-logs/AuditLogs.routes';
+import settingsRouter        from './modules/settings/Settings.routes';
+
 
 // ═══════════════════════════════════════════════════════════════════
 //  APP FACTORY
@@ -99,7 +103,8 @@ export function createApp(): { app: Application; io: SocketIO; httpServer: Serve
   );
 
   // ── Static files (uploads) ─────────────────────────────────────────────
-  app.use('/uploads', express.static('uploads'));
+  app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR || 'uploads')));
+
 
   // ── Global rate limiter ────────────────────────────────────────────────
   app.use('/api/', rateLimiter);
@@ -144,6 +149,8 @@ export function createApp(): { app: Application; io: SocketIO; httpServer: Serve
   app.use(`${API}/holidays`,      holidaysRouter);
   app.use(`${API}/exports`,       exportsRouter);
   app.use(`${API}/audit-logs`,    auditLogsRouter);
+  app.use(`${API}/settings`,      settingsRouter);
+
 
   // ── Error handling (must be last) ─────────────────────────────────────
   app.use(notFoundHandler);

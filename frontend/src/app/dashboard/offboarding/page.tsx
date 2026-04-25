@@ -87,10 +87,11 @@ export default function OffboardingPage() {
         axios.get(`${API_URL}/employees`, { headers })
       ]);
       
-      setOffboardings(offRes.data.data || []);
-      setTemplates(tempRes.data.data || []);
+      setOffboardings(offRes.data.data?.data || offRes.data.data || []);
+      setTemplates(tempRes.data.data?.data || tempRes.data.data || []);
       // Only show ACTIVE employees for offboarding
-      setEmployees((empRes.data.data || []).filter((e:any) => e.employmentStatus !== 'TERMINATED'));
+      const employeesList = empRes.data.data?.data || empRes.data.data || [];
+      setEmployees(employeesList.filter((e:any) => e.employmentStatus !== 'TERMINATED'));
     } catch (error) {
       console.error("Error fetching offboarding data:", error);
     } finally {

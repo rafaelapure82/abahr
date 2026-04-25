@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  /* Paleta basada en la imagen: Mint / Teal / Slate */
-  --color-primary: #00bfa5; /* Verde menta principal */
-  --color-primary-hover: #00a690;
-  --color-primary-light: #e0f2f1;
+  /* Paleta dinámica basada en variables CSS */
+  --color-primary: var(--primary);
+  --color-primary-hover: color-mix(in srgb, var(--primary), black 10%);
+  --color-primary-light: color-mix(in srgb, var(--primary), white 90%);
   --color-secondary: #0f172a;
-  --color-accent: #26a69a;
+  --color-accent: color-mix(in srgb, var(--primary), white 20%);
   
-  --color-sidebar: #ffffff;
-  --color-background: #f8fafc;
-  --color-card: #ffffff;
-  --color-border: #f1f5f9;
+  --color-sidebar: var(--background);
+  --color-background: var(--background);
+  --color-card: var(--card-bg);
+  --color-border: var(--border-color);
   
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
@@ -28,7 +28,22 @@
   --accent-foreground: #0f172a;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #00bfa5;
+  --ring: rgba(0, 191, 165, 0.2);
+  --card-bg: #ffffff;
+  --border-color: #f1f5f9;
+}
+
+.dark {
+  --background: #020617;
+  --foreground: #f8fafc;
+  --muted: #94a3b8;
+  --muted-foreground: #64748b;
+  --accent: #1e293b;
+  --accent-foreground: #f8fafc;
+  --border: #1e293b;
+  --input: #1e293b;
+  --card-bg: #0f172a;
+  --border-color: #1e293b;
 }
 
 body {
@@ -38,11 +53,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Clases de utilidad para el estilo de la imagen */
+/* Clases de utilidad con variables */
 .card-premium {
-  background: white;
+  background: var(--card-bg);
   border-radius: 1rem;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   transition: all 0.3s ease;
 }
@@ -52,34 +67,38 @@ body {
 }
 
 .sidebar-item-active {
-  background-color: #00bfa5;
+  background-color: var(--primary);
   color: white;
   border-radius: 0.75rem;
 }
 
 .input-modern {
+  background-color: var(--background);
+  color: var(--foreground);
   border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   padding: 0.75rem 1rem;
   transition: all 0.2s;
 }
 
 .input-modern:focus {
-  border-color: #00bfa5;
+  border-color: var(--primary);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 191, 165, 0.1);
+  box-shadow: 0 0 0 3px var(--ring);
 }
 
 .btn-primary {
-  background-color: #00bfa5;
+  background-color: var(--primary);
   color: white;
   padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
   font-weight: 600;
   transition: all 0.2s;
+  cursor: pointer;
 }
 
 .btn-primary:hover {
-  background-color: #00a690;
+  opacity: 0.9;
   transform: translateY(-1px);
 }
+

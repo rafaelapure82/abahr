@@ -101,6 +101,14 @@ employeesRouter.patch(
   EmployeesController.updateEmergencyContact,
 );
 
+// Avatar upload
+employeesRouter.patch(
+  '/:id/avatar',
+  rbacOrSelf('id', WRITE_EMP),
+  upload.single('avatar'),
+  EmployeesController.updateAvatar,
+);
+
 // ── Document Management ───────────────────────────────────────────────────
 
 // List docs

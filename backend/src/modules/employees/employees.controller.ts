@@ -63,6 +63,24 @@ export class EmployeesController {
     sendOk(res, employee, 'Emergency contact updated');
   });
 
+  // PATCH /employees/:id/avatar
+  static updateAvatar = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.file) throw BadRequest('No file uploaded');
+    const actorId = req.user?.sub;
+    const employee = await employeesService.updateAvatar(
+      req.params.id, 
+      {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        path: req.file.path
+      },
+      actorId
+    );
+    sendOk(res, employee, 'Avatar updated successfully');
+  });
+
   // GET /employees/:id/history
   static getHistory = asyncHandler(async (req: Request, res: Response) => {
     const history = await employeesService.getAuditHistory(req.params.id);

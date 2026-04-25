@@ -39,8 +39,8 @@ export default function AuditLogsPage() {
           resource: resourceFilter || undefined
         }
       });
-      setLogs(response.data.data);
-      setTotalPages(response.data.meta.totalPages);
+      setLogs(response.data.data?.data || response.data.data || []);
+      setTotalPages(response.data.data?.meta?.totalPages || response.data.meta?.totalPages || 1);
     } catch (error) {
       console.error("Error fetching logs:", error);
     } finally {

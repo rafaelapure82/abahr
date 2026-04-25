@@ -115,7 +115,7 @@ export default function RecruitmentDashboard() {
         axios.get(`${API_URL}/recruitment/stats`, { headers }),
       ]);
 
-      setJobs(jobsRes.data.data || []);
+      setJobs(jobsRes.data.data?.data || jobsRes.data.data || []);
       setStats(statsRes.data.data);
     } catch (err) {
       console.error("Error fetching recruitment data:", err);

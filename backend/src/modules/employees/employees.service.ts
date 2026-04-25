@@ -26,7 +26,8 @@ const DETAIL_SELECT = {
   ...LIST_SELECT,
   middleName: true, gender: true, dateOfBirth: true, maritalStatus: true,
   bloodType: true, nationality: true, workPhone: true, personalPhone: true,
-  workEmail: true, personalEmail: true, linkedinUrl: true,
+  workEmail: true, personalEmail: true, linkedinUrl: true, 
+  githubUrl: true, twitterUrl: true, personalWebsiteUrl: true,
   addressLine1: true, addressLine2: true, city: true, state: true,
   postalCode: true, country: true,
   emergencyName: true, emergencyPhone: true, emergencyRelation: true,
@@ -118,13 +119,24 @@ export class EmployeesService {
     });
     if (!emp) throw NotFound('Employee');
     
+    // Aggregate stats (Total hours worked)
+    const stats = await prisma.attendance.aggregate({
+      where: { employeeId: id },
+      _sum: { hoursWorked: true }
+    });
+    
+    const result = { 
+      ...emp, 
+      totalHoursWorked: Number(stats._sum.hoursWorked || 0).toFixed(1) 
+    };
+
     try {
-      await redis.setex(cacheKey, 3600, JSON.stringify(emp)); // Cache for 1h
+      await redis.setex(cacheKey, 300, JSON.stringify(result)); // Reduce cache to 5m for more real-time feel
     } catch (err) {
       console.error('Redis save error:', err);
     }
     
-    return emp;
+    return result;
   }
 
   // ── Create ────────────────────────────────────────────────────────────────
@@ -206,6 +218,23 @@ export class EmployeesService {
 
   async updateBankInfo(id: string, dto: BankInfoDto, actorId?: string) {
     return this.update(id, dto, actorId);
+  }
+
+  async updateAvatar(id: string, file: FileData, actorId?: string) {
+    await this.findById(id); // check existence
+    const { key } = await storageService.upload(file, `employees/${id}/avatar`);
+    
+    const employee = await prisma.employee.update({
+      where: { id },
+      data: { avatarUrl: key },
+      select: DETAIL_SELECT
+    });
+
+    await this.logAudit(actorId, 'UPDATE', 'Employee', id, { avatarUrl: '...' }, { avatarUrl: key });
+    
+    try { await redis.del(`employee:${id}`); } catch {}
+    
+    return employee;
   }
 
   // ── Document Management ───────────────────────────────────────────────────

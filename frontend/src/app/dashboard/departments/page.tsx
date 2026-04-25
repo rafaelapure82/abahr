@@ -68,11 +68,11 @@ export default function DepartmentsPage() {
         axios.get(`${API_URL}/departments/tree`, { headers })
       ]);
       
-      setDepartments(deptRes.data.data || []);
-      setEmployees(empRes.data.data || []);
-      setPositions(posRes.data || []);
-      setLocations(locRes.data || []);
-      setOrgTree(treeRes.data || []);
+      setDepartments(deptRes.data.data?.data || deptRes.data.data || []);
+      setEmployees(empRes.data.data?.data || empRes.data.data || []);
+      setPositions(posRes.data.data || posRes.data || []);
+      setLocations(locRes.data.data || locRes.data || []);
+      setOrgTree(treeRes.data.data || treeRes.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {

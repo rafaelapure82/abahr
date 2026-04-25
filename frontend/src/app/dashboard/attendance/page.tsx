@@ -47,8 +47,8 @@ export default function AttendanceManagementPage() {
         axios.get(`${API_URL}/attendance/stats`, { headers })
       ]);
       
-      setAttendance(listRes.data.data || []);
-      setTotalPages(listRes.data.meta?.totalPages || 1);
+      setAttendance(listRes.data.data?.data || listRes.data.data || []);
+      setTotalPages(listRes.data.data?.meta?.totalPages || listRes.data.meta?.totalPages || 1);
       setStats(statsRes.data.data);
     } catch (err) {
       console.error("Error fetching attendance data:", err);
@@ -266,7 +266,15 @@ export default function AttendanceManagementPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-black text-slate-800">{record.hoursWorked || 0}h</p>
+                      <p className="text-sm font-black text-slate-800">
+                        {record.hoursWorked ? `${record.hoursWorked}h` : 
+                         record.checkIn && !record.checkOut ? 
+                         `${(Math.max(0, (new Date().getTime() - new Date(record.checkIn).getTime()) / 3600000)).toFixed(1)}h*` : 
+                         '0h'}
+                      </p>
+                      {record.checkIn && !record.checkOut && (
+                        <p className="text-[10px] text-primary font-bold animate-pulse">En curso</p>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${

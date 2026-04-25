@@ -1,4 +1,4 @@
-import { differenceInMinutes, startOfDay, endOfDay } from 'date-fns';
+import { differenceInMinutes, startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
 import { prisma } from '../../config/prisma';
 import redis from '../../config/redis';
 import { logger } from '../../config/logger';
@@ -49,7 +49,7 @@ export class AttendanceService {
       return this.checkIn(employee.id, dto);
     } else if (!existing.checkOut) {
       // Perform Check-Out
-      return this.checkOut(employee.id, { note: dto.note });
+      return this.checkOut(employee.id, { note: dto.note, breakMinutes: 0 });
     } else {
       throw BadRequest('Ya has registrado tu entrada y salida el día de hoy');
     }
@@ -309,8 +309,45 @@ export class AttendanceService {
   }
 
   async softDelete(id: string) {
-    await prisma.attendance.delete({ where: { id } }); // Since the UI doesn't usually show deleted ones, and there's no deletedAt on Attendance yet, I'll use hard delete or check if schema has deletedAt
+    await prisma.attendance.delete({ where: { id } }); 
     await redis.del('attendance:stats:today');
+  }
+
+  async getReportStats(query: any) {
+    const where: any = {};
+    if (query.employeeId) where.employeeId = query.employeeId;
+    if (query.departmentId) where.employee = { departmentId: query.departmentId };
+    if (query.date) {
+      where.date = { gte: startOfMonth(new Date(query.date)), lte: endOfMonth(new Date(query.date)) };
+    }
+    
+    const [statusDist, trend] = await Promise.all([
+      prisma.attendance.groupBy({
+        by: ['status'],
+        where,
+        _count: true
+      }),
+      prisma.attendance.findMany({
+        where,
+        orderBy: { date: 'desc' },
+        take: 7,
+        select: { date: true, hoursWorked: true }
+      })
+    ]);
+
+    const totalCount = statusDist.reduce((sum, s) => sum + s._count, 0);
+
+    return {
+      statusDist: statusDist.map(s => ({ 
+        name: s.status === 'PRESENT' ? 'Puntual' : s.status === 'LATE' ? 'Retraso' : 'Ausente',
+        value: totalCount > 0 ? Math.round((s._count / totalCount) * 100) : 0,
+        color: s.status === 'PRESENT' ? '#10b981' : s.status === 'LATE' ? '#f59e0b' : '#ef4444'
+      })),
+      attendanceTrend: trend.reverse().map(t => ({
+        name: t.date.toLocaleDateString('es-ES', { weekday: 'short' }),
+        value: Number(t.hoursWorked || 0)
+      }))
+    };
   }
 }
 

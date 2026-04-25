@@ -50,6 +50,12 @@ attendanceRouter.get(
   AttendanceController.stats
 );
 
+attendanceRouter.get(
+  '/report-stats', 
+  rbac(['READ:ATTENDANCE', 'MANAGE:ALL']), 
+  AttendanceController.reportStats
+);
+
 attendanceRouter.post(
   '/', 
   rbac(['MANAGE:ATTENDANCE', 'MANAGE:ALL']), 

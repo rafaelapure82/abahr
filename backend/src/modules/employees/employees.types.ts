@@ -62,6 +62,11 @@ export const createEmployeeSchema = z.object({
   workPhone: z.string().optional(),
   personalEmail: z.string().email().optional(),
   nationalId: z.string().optional(),
+  avatarUrl: z.string().url().optional(),
+  linkedinUrl: z.string().url().optional(),
+  githubUrl: z.string().url().optional(),
+  twitterUrl: z.string().url().optional(),
+  personalWebsiteUrl: z.string().url().optional(),
 
   // Address
   addressLine1: z.string().optional(),

@@ -484,6 +484,9 @@ model Employee {
   workEmail     String? // alias, different from login email
   personalEmail String?
   linkedinUrl   String?
+  githubUrl     String?
+  twitterUrl    String?
+  personalWebsiteUrl String?
 
   // ── Address ───────────────────────────────────────────────────────────────
   addressLine1 String?

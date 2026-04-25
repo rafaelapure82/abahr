@@ -29,4 +29,14 @@ export class ExportsController {
     res.setHeader('Content-Disposition', 'attachment; filename=attendance_report.xlsx');
     res.send(buffer);
   });
+
+  static exportAttendancePdf = asyncHandler(async (req: Request, res: Response) => {
+    const pdfDoc = await exportsService.exportAttendanceReportPdf(req.query as any);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=attendance_report.pdf');
+    
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+  });
 }
