@@ -53,7 +53,7 @@ export class OffboardingService {
 
   async findAll(query: OffboardingQuery) {
     const { page, limit, skip } = parsePagination(query);
-    const where: any = { deletedAt: null };
+    const where: any = {};
     
     if (query.status) where.status = query.status;
     if (query.departmentId) where.departmentId = query.departmentId;

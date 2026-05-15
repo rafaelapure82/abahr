@@ -1,143 +1,90 @@
-# ABA Talent Management 🚀
+# 🚀 ABA Talent Management – Setup Guide
 
-> Enterprise-grade Human Resource Management System built with **Node.js + Express + TypeScript + Prisma + PostgreSQL** on the backend and **Next.js 15 + React 19** on the frontend.
-
----
-
-## 📋 Table of Contents
-
-- [Tech Stack](#-tech-stack)
-- [Monorepo Structure](#-monorepo-structure)
-- [Modules](#-modules)
-- [Quick Start](#-quick-start)
-- [Environment Variables](#-environment-variables)
-- [Development](#-development)
-- [Docker](#-docker)
-- [API Reference](#-api-reference)
-- [Design System](#-design-system)
+Este repositorio contiene el sistema **ABA HR**, una solución de gestión de talento humano de alto nivel construida con un stack moderno y escalable.
 
 ---
 
-## 🛠 Tech Stack
+## ⚡ Inicio Rápido (A Tope)
 
-| Layer          | Technology                                      |
-|----------------|-------------------------------------------------|
-| **Backend**    | Node.js 20 · Express · TypeScript · Prisma ORM  |
-| **Database**   | PostgreSQL (NeonDB for production)              |
-| **Cache/Queue**| Redis                                           |
-| **Frontend**   | **Next.js 15 (App Router)** · React 19 · TypeScript |
-| **Styling**    | TailwindCSS · Lucide React                      |
-| **State/Data** | TanStack Query (React Query) · Zustand          |
-| **Auth**       | JWT (Access + Refresh Tokens) · RBAC           |
-| **Real-time**  | Socket.IO                                       |
-| **Container**  | Docker + docker-compose                         |
+Sigue estas instrucciones para poner todos los servicios en marcha en tiempo récord.
 
----
+### 🐳 Opción A: Docker (Recomendado)
+Levanta todo el ecosistema (DB, Redis, API, App) con un solo comando.
 
-## 📁 Monorepo Structure
-
+```bash
+# Desde la raíz del proyecto
+docker-compose up -d --build
 ```
-ABAHR/
-├── backend/                    # Express API
-│   ├── prisma/
-│   │   ├── schema.prisma       # Full DB schema (15 modules)
-│   │   └── seed.ts             # Initial data seed
-│   ├── src/
-│   │   ├── config/             # env, logger, prisma, redis
-│   │   └── modules/            # Domain logic (auth, employees, etc.)
-│
-├── frontend/                   # Next.js 15 App (React 19)
-│   ├── src/
-│   │   ├── app/                # App Router (Pages & Layouts)
-│   │   ├── components/         # UI Components (RoleGuard, etc.)
-│   │   ├── context/            # Global State (AuthContext)
-│   │   └── styles/             # TailwindCSS + Glassmorphism tokens
-│
-├── frontend-angular-legacy/    # Original Angular codebase (Reference)
-│
-├── docker/                     # Nginx & Postgres init scripts
-├── docker-compose.yml
-└── README.md
-```
+*   **API:** `http://localhost:3000`
+*   **App:** `http://localhost:4200`
+*   **MailHog:** `http://localhost:8025`
 
 ---
 
-## 🧩 Modules
+### 💻 Opción B: Manual (Desarrollo Activo)
 
-| Module                  | Description                                            |
-|-------------------------|--------------------------------------------------------|
-| 🔐 **Auth + RBAC**      | JWT auth, refresh tokens, Role-Based Access Control    |
-| 👤 **Employees**        | Full profile, documents, work history, org chart       |
-| 🏢 **Departments**      | Hierarchical departments, positions, org chart         |
-| 🚀 **Onboarding**       | Task checklists, automated workflows                   |
-| ⏰ **Attendance**       | Clock-in/out, remote, overtime tracking                |
-| 💰 **Payroll**          | Gross/net calc, deductions, bonuses, PDF reports       |
-| 📋 **Recruitment**      | Jobs, candidates, application pipeline                 |
-| 📊 **Dashboard**        | Executive KPIs, analytics, charts                      |
+Si prefieres ejecutar los servicios por separado para desarrollo:
 
----
-
-## ⚡ Quick Start
-
-### Prerequisites
-
-- Node.js ≥ 20
-- Docker & docker-compose
-- PostgreSQL & Redis (local or via Docker)
-
-### 1. Initialize Backend
-
+#### 1. Backend (API)
 ```bash
 cd backend
-npm install
-npm run prisma:generate
-npm run prisma:migrate
-npm run dev
+npm install                     # Instalar dependencias
+npm run prisma:generate         # Generar cliente de base de datos
+npm run prisma:migrate          # Sincronizar esquema de DB
+npm run prisma:seed             # (Opcional) Cargar datos de prueba
+npm run dev                     # ¡A tope! Iniciar API
 ```
 
-### 2. Initialize Frontend
-
+#### 2. Frontend (Next.js)
 ```bash
 cd frontend
-npm install
-npm run dev -- -p 4200
+npm install                     # Instalar dependencias
+npm run dev -- -p 4200          # ¡A tope! Iniciar App en puerto 4200
 ```
 
-| Service        | URL                      |
-|----------------|--------------------------|
-| API            | http://localhost:3000     |
-| Next.js App    | http://localhost:4200     |
-| MailHog        | http://localhost:8025     |
-| Prisma Studio  | http://localhost:5555     |
+---
 
-### Default Credentials
+## 🔑 Credenciales de Acceso
+Usa estos datos para entrar al sistema una vez iniciado:
 
-```
-Email:    admin@abatalent.com
-Password: Admin@123!
+| Campo | Valor |
+| :--- | :--- |
+| **Email** | `admin@abatalent.com` |
+| **Password** | `Admin@123!` |
+
+---
+
+## 🛠️ Herramientas de Mantenimiento
+
+*   **Prisma Studio**: `cd backend && npm run prisma:studio`
+    *   *Visualiza y edita los datos de la base de datos en `http://localhost:5555`.*
+*   **Logs del Sistema**: Los logs se encuentran en `backend/logs/`.
+*   **Reset de DB**: `cd backend && npm run prisma:reset` (¡Cuidado! Borra todo).
+
+---
+
+## 📁 Estructura del Monorepo
+
+```bash
+ABAHR/
+├── backend/      # API Rest (Node.js + Express + Prisma)
+├── frontend/     # Interfaz Web (Next.js 15 + React 19)
+├── docker/       # Configuraciones de contenedores
+└── scripts/      # Utilidades de automatización
 ```
 
 ---
 
 ## 🎨 Design System
-
-The frontend uses a **Premium Glassmorphism** design system:
-- **Primary color**: `#00bfa5` (Mint Green)
-- **Aesthetic**: Transparent layers, soft shadows, rounded borders.
-- **Typography**: Inter (Modern Sans-serif)
-- **Icons**: Lucide React
+El sistema utiliza un estilo **Premium Glassmorphism**:
+- **Colores**: Mint Green (`#00bfa5`) y Sleek Dark Mode.
+- **Tipografía**: Inter.
+- **Componentes**: TailwindCSS + Lucide React.
 
 ---
 
-## 🐳 Docker
-
-```bash
-# Start all services (Postgres, Redis, Backend, Frontend)
-docker-compose up -d --build
-```
+> [!TIP]
+> Si tienes problemas de conectividad con la base de datos, asegúrate de que el archivo `.env` en `backend/` tenga la `DATABASE_URL` correcta.
 
 ---
-
-## 📜 License
-
-Private – ABA Talent Management © 2026
+**ABA Talent Management © 2026**

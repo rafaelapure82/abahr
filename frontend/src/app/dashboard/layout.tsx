@@ -43,10 +43,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r border-slate-100 flex flex-col shrink-0">
           <div className="p-6 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white">
-              <Briefcase className="w-6 h-6" />
-            </div>
-            <span className="text-xl font-bold text-slate-900">ABA Talent</span>
+            <img src="/aba-logo.jpg" alt="ABA Logo" className="h-12 object-contain mix-blend-multiply" />
+            <span className="text-xl font-bold text-slate-900 tracking-tight">ABA Talent</span>
           </div>
 
           <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">

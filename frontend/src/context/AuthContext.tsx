@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // 1. Initial auth check
     const checkAuth = () => {
       const token = localStorage.getItem('access_token');
       const userData = localStorage.getItem('user_data');
@@ -54,6 +55,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     checkAuth();
+
+    // 2. Axios interceptor for automatic token refresh on 401
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+        
+        // If error is 401 and we haven't retried yet
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          
+          try {
+            const refreshToken = localStorage.getItem('refresh_token');
+            if (!refreshToken) throw new Error("No refresh token");
+
+            const response = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+            const { accessToken } = response.data.data;
+            
+            localStorage.setItem('access_token', accessToken);
+            
+            // Retry the original request with the new token
+            originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+            return axios(originalRequest);
+          } catch (refreshError) {
+            console.error("Session expired, logging out...");
+            logout();
+            return Promise.reject(refreshError);
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
   }, []);
 
   const login = async (credentials: any) => {

@@ -29,6 +29,8 @@ export default function OffboardingPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedOffboarding, setSelectedOffboarding] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [internalNotes, setInternalNotes] = useState('');
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     employeeId: '',

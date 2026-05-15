@@ -58,10 +58,19 @@ export default function ProfilePage() {
   };
 
   const handleUpdateProfile = async (formData: any) => {
+    // Clean up empty strings to avoid Zod validation errors on the backend
+    const cleanedData = Object.entries(formData).reduce((acc: any, [key, value]) => {
+      // Keep values that are not empty strings
+      if (value !== '') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
     setIsSaving(true);
     try {
       const token = localStorage.getItem('access_token');
-      await axios.patch(`${API_URL}/employees/${employee.id}`, formData, {
+      await axios.patch(`${API_URL}/employees/${employee.id}`, cleanedData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       await fetchEmployee();

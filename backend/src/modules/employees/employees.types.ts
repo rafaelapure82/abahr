@@ -43,6 +43,10 @@ export const bankInfoSchema = z.object({
 });
 export type BankInfoDto = z.infer<typeof bankInfoSchema>;
 
+// Helper to handle empty strings as undefined in Zod
+const emptyToUndefined = <T extends z.ZodTypeAny>(schema: T) => 
+  z.preprocess((val) => (val === '' ? undefined : val), schema);
+
 // ── Create Employee ───────────────────────────────────────────────────────────
 export const createEmployeeSchema = z.object({
   // Auth
@@ -55,18 +59,18 @@ export const createEmployeeSchema = z.object({
   middleName: z.string().optional(),
   lastName: z.string().min(1).max(100),
   gender: z.nativeEnum(Gender).optional(),
-  dateOfBirth: z.string().datetime({ offset: true }).optional(),
+  dateOfBirth: emptyToUndefined(z.string().datetime({ offset: true }).optional()),
   maritalStatus: z.nativeEnum(MaritalStatus).optional(),
   nationality: z.string().optional(),
   personalPhone: z.string().optional(),
   workPhone: z.string().optional(),
-  personalEmail: z.string().email().optional(),
+  personalEmail: emptyToUndefined(z.string().email().optional()),
   nationalId: z.string().optional(),
-  avatarUrl: z.string().url().optional(),
-  linkedinUrl: z.string().url().optional(),
-  githubUrl: z.string().url().optional(),
-  twitterUrl: z.string().url().optional(),
-  personalWebsiteUrl: z.string().url().optional(),
+  avatarUrl: emptyToUndefined(z.string().url().optional()),
+  linkedinUrl: emptyToUndefined(z.string().url().optional()),
+  githubUrl: emptyToUndefined(z.string().url().optional()),
+  twitterUrl: emptyToUndefined(z.string().url().optional()),
+  personalWebsiteUrl: emptyToUndefined(z.string().url().optional()),
 
   // Address
   addressLine1: z.string().optional(),
@@ -82,8 +86,8 @@ export const createEmployeeSchema = z.object({
   // Employment
   jobTitle: z.string().min(1).max(150),
   employmentType: z.nativeEnum(EmploymentType).default(EmploymentType.FULL_TIME),
-  hireDate: z.string().datetime({ offset: true }).optional(),
-  probationEndDate: z.string().datetime({ offset: true }).optional(),
+  hireDate: emptyToUndefined(z.string().datetime({ offset: true }).optional()),
+  probationEndDate: emptyToUndefined(z.string().datetime({ offset: true }).optional()),
   departmentId: z.string().uuid().optional(),
   positionId: z.string().uuid().optional(),
   managerId: z.string().uuid().optional(),
