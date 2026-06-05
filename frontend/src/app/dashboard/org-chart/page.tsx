@@ -10,6 +10,13 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
+const getAvatarUrl = (url: string | null) => {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  const uploadsBase = API_URL.replace('/api/v1', '/uploads');
+  return `${uploadsBase}/${url}`;
+};
+
 export default function OrgChartPage() {
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,7 +120,7 @@ function OrgNode({ node }: { node: any }) {
         <div className="flex flex-col items-center text-center space-y-3">
           <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 border-2 border-white shadow-md">
             {node.avatarUrl ? (
-              <img src={node.avatarUrl} alt={node.name} className="w-full h-full object-cover" />
+              <img src={getAvatarUrl(node.avatarUrl) || ''} alt={node.name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center font-black text-primary text-xl uppercase">
                 {node.firstName?.[0]}{node.lastName?.[0]}

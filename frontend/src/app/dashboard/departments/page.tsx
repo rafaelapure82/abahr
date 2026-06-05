@@ -89,14 +89,54 @@ export default function DepartmentsPage() {
       const headers = { Authorization: `Bearer ${token}` };
       
       let endpoint = '';
-      if (activeTab === 'depts') endpoint = '/departments';
-      else if (activeTab === 'positions') endpoint = '/departments/positions';
-      else if (activeTab === 'locations') endpoint = '/departments/locations';
+      let cleanPayload: any = {};
+
+      if (activeTab === 'depts') {
+        endpoint = '/departments';
+        cleanPayload = {
+          name: formData.name,
+          code: formData.code,
+          description: formData.description || undefined,
+          color: formData.color || undefined,
+          budget: formData.budget ? parseFloat(formData.budget) : undefined,
+          costCenter: formData.costCenter || undefined,
+        };
+        if (formData.parentId && formData.parentId.trim() !== '') {
+          cleanPayload.parentId = formData.parentId;
+        } else {
+          cleanPayload.parentId = null;
+        }
+        if (formData.headId && formData.headId.trim() !== '') {
+          cleanPayload.headId = formData.headId;
+        } else {
+          cleanPayload.headId = null;
+        }
+      } else if (activeTab === 'positions') {
+        endpoint = '/departments/positions';
+        cleanPayload = {
+          title: formData.title,
+          code: formData.code,
+          description: formData.description || undefined,
+          departmentId: formData.departmentId,
+          level: parseInt(formData.level) || 1,
+          targetCount: parseInt(formData.targetCount) || 1,
+        };
+      } else if (activeTab === 'locations') {
+        endpoint = '/departments/locations';
+        cleanPayload = {
+          name: formData.name,
+          code: formData.code,
+          address: formData.address || undefined,
+          city: formData.city || undefined,
+          country: formData.country || 'US',
+          timeZone: formData.timeZone || 'UTC',
+        };
+      }
 
       if (formData.id) {
-        await axios.patch(`${API_URL}${endpoint}/${formData.id}`, formData, { headers });
+        await axios.patch(`${API_URL}${endpoint}/${formData.id}`, cleanPayload, { headers });
       } else {
-        await axios.post(`${API_URL}${endpoint}`, formData, { headers });
+        await axios.post(`${API_URL}${endpoint}`, cleanPayload, { headers });
       }
       
       setStatus({ type: 'success', message: 'Información actualizada correctamente.' });
@@ -618,10 +658,26 @@ function BulkMoveTool({ employees, departments, positions, onComplete }: any) {
     setIsProcessing(true);
     try {
       const token = localStorage.getItem('access_token');
-      await axios.post(`${API_URL}/departments/bulk-move`, {
+      
+      // Build a clean payload by omitting empty string fields
+      const payload: any = {
         employeeIds: selectedEmps,
-        ...moveData
-      }, { headers: { Authorization: `Bearer ${token}` } });
+        newDeptId: moveData.newDeptId
+      };
+      
+      if (moveData.newPositionId && moveData.newPositionId.trim() !== '') {
+        payload.newPositionId = moveData.newPositionId;
+      }
+      if (moveData.newManagerId && moveData.newManagerId.trim() !== '') {
+        payload.newManagerId = moveData.newManagerId;
+      }
+      if (moveData.reason && moveData.reason.trim() !== '') {
+        payload.reason = moveData.reason;
+      }
+
+      await axios.post(`${API_URL}/departments/bulk-move`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       alert('Traslado masivo completado con éxito.');
       setSelectedEmps([]);
       onComplete();

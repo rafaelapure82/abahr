@@ -8,6 +8,7 @@ import {
   Mail, Phone, Building2, Loader2, UserX,
   Eye, Edit3, Calendar, Trash2, X
 } from 'lucide-react';
+import { getAvatarUrl } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
@@ -237,7 +238,7 @@ export default function EmployeeListPage() {
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-slate-100 border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
                           {emp.avatarUrl ? (
-                            <img src={emp.avatarUrl} alt={emp.firstName} className="w-full h-full object-cover" />
+                            <img src={getAvatarUrl(emp.avatarUrl) || ''} alt={emp.firstName} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold bg-primary/5 text-primary">
                               {emp.firstName?.[0]}{emp.lastName?.[0]}

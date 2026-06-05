@@ -11,6 +11,7 @@ import {
   DollarSign, FileCheck
 } from 'lucide-react';
 import UploadDocumentModal from '@/components/employees/UploadDocumentModal';
+import { getAvatarUrl } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
@@ -98,7 +99,7 @@ export default function EmployeeDetailPage() {
         <div className="flex flex-col md:flex-row items-center gap-8 relative">
           <div className="w-32 h-32 rounded-3xl bg-slate-100 border-4 border-white shadow-2xl overflow-hidden flex-shrink-0">
             {employee.avatarUrl ? (
-              <img src={employee.avatarUrl} className="w-full h-full object-cover" />
+              <img src={getAvatarUrl(employee.avatarUrl) || ''} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-3xl font-black text-primary bg-primary/5 uppercase">
                 {employee.firstName?.[0]}{employee.lastName?.[0]}

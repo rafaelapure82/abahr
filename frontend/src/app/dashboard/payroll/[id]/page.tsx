@@ -9,6 +9,7 @@ import {
   DollarSign, PieChart, Printer, ChevronRight,
   TrendingUp, TrendingDown, Info
 } from 'lucide-react';
+import { getAvatarUrl } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
@@ -167,7 +168,7 @@ export default function PayrollDetailPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-primary font-bold text-xs border border-slate-200">
                         {item.employee?.avatarUrl ? (
-                          <img src={item.employee.avatarUrl} className="w-full h-full object-cover rounded-xl" />
+                          <img src={getAvatarUrl(item.employee.avatarUrl) || ''} className="w-full h-full object-cover rounded-xl" />
                         ) : (
                           <User className="w-5 h-5" />
                         )}
