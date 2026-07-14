@@ -115,11 +115,11 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {activeTab === 'company' && <CompanySettings data={settings.general || {}} update={(k, v) => updateSetting('general', k, v)} onUpload={handleLogoUpload} />}
-            {activeTab === 'appearance' && <AppearanceSettings data={settings.appearance || {}} update={(k, v) => updateSetting('appearance', k, v)} />}
-            {activeTab === 'notifications' && <NotificationSettings data={settings.notifications || {}} update={(k, v) => updateSetting('notifications', k, v)} />}
-            {activeTab === 'security' && <SecuritySettings data={settings.security || {}} update={(k, v) => updateSetting('security', k, v)} />}
-            {activeTab === 'integrations' && <IntegrationSettings data={settings.integrations || {}} update={(k, v) => updateSetting('integrations', k, v)} />}
+            {activeTab === 'company' && <CompanySettings data={settings.general || {}} update={(k: any, v: any) => updateSetting('general', k, v)} onUpload={handleLogoUpload} />}
+            {activeTab === 'appearance' && <AppearanceSettings data={settings.appearance || {}} update={(k: any, v: any) => updateSetting('appearance', k, v)} />}
+            {activeTab === 'notifications' && <NotificationSettings data={settings.notifications || {}} update={(k: any, v: any) => updateSetting('notifications', k, v)} />}
+            {activeTab === 'security' && <SecuritySettings data={settings.security || {}} update={(k: any, v: any) => updateSetting('security', k, v)} />}
+            {activeTab === 'integrations' && <IntegrationSettings data={settings.integrations || {}} update={(k: any, v: any) => updateSetting('integrations', k, v)} />}
 
           </div>
         </main>
@@ -445,7 +445,7 @@ function ThemeCard({ icon, label, sub, active, onClick }: any) {
       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${
         active ? 'bg-primary text-white scale-110 rotate-3' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:scale-110'
       }`}>
-        {React.cloneElement(icon as React.ReactElement, { size: 28 })}
+        {React.cloneElement(icon as React.ReactElement, { size: 28 } as any)}
       </div>
       <div>
         <p className={`text-sm font-black ${active ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`}>{label}</p>
@@ -504,7 +504,7 @@ function SettingsNavButton({ icon, label, sub, active, onClick }: any) {
       }`}
     >
       <div className={`p-2 rounded-xl ${active ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800'}`}>
-        {React.cloneElement(icon as React.ReactElement, { size: 20 })}
+        {React.cloneElement(icon as React.ReactElement, { size: 20 } as any)}
       </div>
       <div className="text-left">
         <p className="text-xs font-black uppercase tracking-widest">{label}</p>

@@ -7,7 +7,7 @@ import {
   Plus, Calendar, MoreVertical, ExternalLink,
   ChevronLeft, BadgeCheck, Clock, TrendingUp,
   MapPin, DollarSign, Building2, User, Mail,
-  Phone, Globe, Github, FileText,
+  Phone, Globe, FileText,
   AlertCircle, CheckCircle2, XCircle, ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';

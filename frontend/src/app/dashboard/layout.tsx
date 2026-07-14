@@ -31,7 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   const getAvatarUrl = (url: string | null) => {
-    if (!url) return null;
+    if (!url) return undefined;
     if (url.startsWith('http')) return url;
     const uploadsBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1').replace('/api/v1', '/uploads');
     return `${uploadsBase}/${url}`;

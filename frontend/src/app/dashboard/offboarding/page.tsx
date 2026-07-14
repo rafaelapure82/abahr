@@ -380,14 +380,14 @@ export default function OffboardingPage() {
               <FormSelect 
                 label="Empleado a Desvincular" 
                 value={formData.employeeId} 
-                onChange={(v) => setFormData({...formData, employeeId: v})} 
+                onChange={(v: any) => setFormData({...formData, employeeId: v})} 
                 options={employees.map(e => ({ label: `${e.firstName} ${e.lastName}`, value: e.id }))}
                 required 
               />
               <FormSelect 
                 label="Plantilla de Salida" 
                 value={formData.templateId} 
-                onChange={(v) => setFormData({...formData, templateId: v})} 
+                onChange={(v: any) => setFormData({...formData, templateId: v})} 
                 options={templates.map(t => ({ label: t.name, value: t.id }))}
                 required 
               />
@@ -396,7 +396,7 @@ export default function OffboardingPage() {
                 <FormSelect 
                   label="Motivo de Salida" 
                   value={formData.exitReason} 
-                  onChange={(v) => setFormData({...formData, exitReason: v})} 
+                  onChange={(v: any) => setFormData({...formData, exitReason: v})} 
                   options={[
                     { label: 'Renuncia Voluntaria', value: 'RESIGNATION' },
                     { label: 'Despido con Causa', value: 'TERMINATION_WITH_CAUSE' },

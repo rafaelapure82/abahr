@@ -270,8 +270,8 @@ export default function DepartmentsPage() {
                     <FormField label="Centro de Costos" value={formData.costCenter} onChange={(val:string) => setFormData({...formData, costCenter: val})} placeholder="Ej. CC-001" />
                   </div>
                   <div className="space-y-4">
-                    <FormSelect label="Departamento Padre" value={formData.parentId} onChange={(val) => setFormData({...formData, parentId: val})} options={departments.filter(d => d.id !== formData.id).map(d => ({ label: d.name, value: d.id }))} emptyLabel="Ninguno (Raíz)" />
-                    <FormSelect label="Gerente / Líder de Área" value={formData.headId} onChange={(val) => setFormData({...formData, headId: val})} options={employees.map(e => ({ label: `${e.firstName} ${e.lastName}`, value: e.id }))} emptyLabel="Sin Asignar" />
+                    <FormSelect label="Departamento Padre" value={formData.parentId} onChange={(val: any) => setFormData({...formData, parentId: val})} options={departments.filter(d => d.id !== formData.id).map(d => ({ label: d.name, value: d.id }))} emptyLabel="Ninguno (Raíz)" />
+                    <FormSelect label="Gerente / Líder de Área" value={formData.headId} onChange={(val: any) => setFormData({...formData, headId: val})} options={employees.map(e => ({ label: `${e.firstName} ${e.lastName}`, value: e.id }))} emptyLabel="Sin Asignar" />
                   </div>
                 </>
               )}
@@ -284,7 +284,7 @@ export default function DepartmentsPage() {
                     <FormField label="Nivel de Seniority (1-10)" type="number" value={formData.level} onChange={(val:any) => setFormData({...formData, level: parseInt(val)})} required />
                     <FormField label="Target Headcount (Plazas)" type="number" value={formData.targetCount} onChange={(val:any) => setFormData({...formData, targetCount: parseInt(val)})} required />
                   </div>
-                  <FormSelect label="Asignar a Departamento" value={formData.departmentId} onChange={(val) => setFormData({...formData, departmentId: val})} options={departments.map(d => ({ label: d.name, value: d.id }))} required />
+                  <FormSelect label="Asignar a Departamento" value={formData.departmentId} onChange={(val: any) => setFormData({...formData, departmentId: val})} options={departments.map(d => ({ label: d.name, value: d.id }))} required />
                 </>
               )}
 
@@ -718,9 +718,9 @@ function BulkMoveTool({ employees, departments, positions, onComplete }: any) {
           <ArrowRight className="w-4 h-4" /> 2. Destino del Traslado
         </h3>
         
-        <FormSelect label="Nuevo Departamento" value={moveData.newDeptId} onChange={(v) => setMoveData({...moveData, newDeptId: v})} options={departments.map(d => ({ label: d.name, value: d.id }))} />
-        <FormSelect label="Nuevo Cargo (Opcional)" value={moveData.newPositionId} onChange={(v) => setMoveData({...moveData, newPositionId: v})} options={positions.filter(p => p.departmentId === moveData.newDeptId).map(p => ({ label: p.title, value: p.id }))} />
-        <FormSelect label="Nuevo Reporte Directo (Opcional)" value={moveData.newManagerId} onChange={(v) => setMoveData({...moveData, newManagerId: v})} options={employees.filter(e => e.departmentId === moveData.newDeptId).map(e => ({ label: `${e.firstName} ${e.lastName}`, value: e.id }))} />
+        <FormSelect label="Nuevo Departamento" value={moveData.newDeptId} onChange={(v: any) => setMoveData({...moveData, newDeptId: v})} options={(departments as any[]).map((d: any) => ({ label: d.name, value: d.id }))} />
+        <FormSelect label="Nuevo Cargo (Opcional)" value={moveData.newPositionId} onChange={(v: any) => setMoveData({...moveData, newPositionId: v})} options={(positions as any[]).filter((p: any) => p.departmentId === moveData.newDeptId).map((p: any) => ({ label: p.title, value: p.id }))} />
+        <FormSelect label="Nuevo Reporte Directo (Opcional)" value={moveData.newManagerId} onChange={(v: any) => setMoveData({...moveData, newManagerId: v})} options={(employees as any[]).filter((e: any) => e.departmentId === moveData.newDeptId).map((e: any) => ({ label: `${e.firstName} ${e.lastName}`, value: e.id }))} />
         <FormField label="Motivo del Traslado" value={moveData.reason} onChange={(v:string) => setMoveData({...moveData, reason: v})} placeholder="Ej. Reestructuración de Q2" />
 
         <button 

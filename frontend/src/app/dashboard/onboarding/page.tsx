@@ -275,14 +275,14 @@ export default function OnboardingPage() {
               <FormSelect 
                 label="Nuevo Empleado" 
                 value={formData.employeeId} 
-                onChange={(v) => setFormData({...formData, employeeId: v})} 
+                onChange={(v: any) => setFormData({...formData, employeeId: v})} 
                 options={employees.map(e => ({ label: `${e.firstName} ${e.lastName}`, value: e.id }))}
                 required 
               />
               <FormSelect 
                 label="Plantilla de Onboarding" 
                 value={formData.templateId} 
-                onChange={(v) => setFormData({...formData, templateId: v})} 
+                onChange={(v: any) => setFormData({...formData, templateId: v})} 
                 options={templates.map(t => ({ label: t.name, value: t.id }))}
                 required 
               />

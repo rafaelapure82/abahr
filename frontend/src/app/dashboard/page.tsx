@@ -239,7 +239,7 @@ function SummaryCard({ kpi, color, icon }: { kpi: any, color: string, icon: Reac
     <div className="card-premium p-8 relative overflow-hidden group bg-white border-none shadow-sm transition-all hover:shadow-xl hover:-translate-y-1">
       <div className="flex justify-between items-start mb-6">
         <div className={`p-4 rounded-[1.5rem] text-white shadow-lg ${color} transition-transform group-hover:scale-110`}>
-          {React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' })}
+          {React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' } as any)}
         </div>
         {kpi.change !== undefined && (
           <div className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest ${kpi.trend === 'up' ? 'text-emerald-500' : kpi.trend === 'down' ? 'text-rose-500' : 'text-slate-400'}`}>
@@ -253,7 +253,7 @@ function SummaryCard({ kpi, color, icon }: { kpi: any, color: string, icon: Reac
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{kpi.label}</p>
       </div>
       <div className="absolute -bottom-4 -right-4 opacity-[0.02] group-hover:opacity-[0.06] transition-opacity">
-        {React.cloneElement(icon as React.ReactElement, { className: 'w-32 h-32' })}
+        {React.cloneElement(icon as React.ReactElement, { className: 'w-32 h-32' } as any)}
       </div>
     </div>
   );

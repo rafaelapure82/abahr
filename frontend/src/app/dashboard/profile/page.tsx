@@ -113,7 +113,7 @@ export default function ProfilePage() {
   };
 
   const getAvatarUrl = (url: string | null) => {
-    if (!url) return null;
+    if (!url) return undefined;
     if (url.startsWith('http')) return url;
     // Base uploads path for relative keys
     const uploadsBase = API_URL.replace('/api/v1', '/uploads');
@@ -476,20 +476,20 @@ function EditProfileModal({ employee, onClose, onSave, isSaving }: any) {
         
         <div className="p-10 space-y-8 max-h-[60vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-6">
-            <InputGroup label="Nombre" value={formData.firstName} onChange={(v) => setFormData({...formData, firstName: v})} />
-            <InputGroup label="Apellido" value={formData.lastName} onChange={(v) => setFormData({...formData, lastName: v})} />
+            <InputGroup label="Nombre" value={formData.firstName} onChange={(v: any) => setFormData({...formData, firstName: v})} />
+            <InputGroup label="Apellido" value={formData.lastName} onChange={(v: any) => setFormData({...formData, lastName: v})} />
           </div>
-          <InputGroup label="Teléfono Móvil" value={formData.personalPhone} onChange={(v) => setFormData({...formData, personalPhone: v})} icon={<Phone className="w-4 h-4" />} />
+          <InputGroup label="Teléfono Móvil" value={formData.personalPhone} onChange={(v: any) => setFormData({...formData, personalPhone: v})} icon={<Phone className="w-4 h-4" />} />
           <div className="grid grid-cols-2 gap-6">
-            <InputGroup label="Ciudad" value={formData.city} onChange={(v) => setFormData({...formData, city: v})} icon={<MapPin className="w-4 h-4" />} />
-            <InputGroup label="País" value={formData.country} onChange={(v) => setFormData({...formData, country: v})} icon={<Globe className="w-4 h-4" />} />
+            <InputGroup label="Ciudad" value={formData.city} onChange={(v: any) => setFormData({...formData, city: v})} icon={<MapPin className="w-4 h-4" />} />
+            <InputGroup label="País" value={formData.country} onChange={(v: any) => setFormData({...formData, country: v})} icon={<Globe className="w-4 h-4" />} />
           </div>
           <div className="space-y-4">
             <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Redes Profesionales</p>
-            <InputGroup label="LinkedIn Profile" value={formData.linkedinUrl} onChange={(v) => setFormData({...formData, linkedinUrl: v})} icon={<ContactRound className="w-4 h-4" />} />
-            <InputGroup label="GitHub Profile" value={formData.githubUrl} onChange={(v) => setFormData({...formData, githubUrl: v})} icon={<CodeXml className="w-4 h-4" />} />
-            <InputGroup label="Twitter (X)" value={formData.twitterUrl} onChange={(v) => setFormData({...formData, twitterUrl: v})} icon={<ExternalLink className="w-4 h-4" />} />
-            <InputGroup label="Personal Website" value={formData.personalWebsiteUrl} onChange={(v) => setFormData({...formData, personalWebsiteUrl: v})} icon={<Globe className="w-4 h-4" />} />
+            <InputGroup label="LinkedIn Profile" value={formData.linkedinUrl} onChange={(v: any) => setFormData({...formData, linkedinUrl: v})} icon={<ContactRound className="w-4 h-4" />} />
+            <InputGroup label="GitHub Profile" value={formData.githubUrl} onChange={(v: any) => setFormData({...formData, githubUrl: v})} icon={<CodeXml className="w-4 h-4" />} />
+            <InputGroup label="Twitter (X)" value={formData.twitterUrl} onChange={(v: any) => setFormData({...formData, twitterUrl: v})} icon={<ExternalLink className="w-4 h-4" />} />
+            <InputGroup label="Personal Website" value={formData.personalWebsiteUrl} onChange={(v: any) => setFormData({...formData, personalWebsiteUrl: v})} icon={<Globe className="w-4 h-4" />} />
           </div>
         </div>
 
