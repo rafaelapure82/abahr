@@ -53,6 +53,7 @@ export const OffboardingQuerySchema = z.object({
   employeeId: z.string().optional(),
   status: z.nativeEnum(BoardingStatus).optional(),
   search: z.string().optional(),
+  departmentId: z.string().optional(),
 });
 
 export type OffboardingQuery = z.infer<typeof OffboardingQuerySchema>;

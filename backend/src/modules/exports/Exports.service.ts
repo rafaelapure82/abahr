@@ -266,7 +266,7 @@ export class ExportsService {
                   { text: a.checkIn ? a.checkIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--', fontSize: 9 },
                   { text: a.checkOut ? a.checkOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--', fontSize: 9 },
                   { text: `${a.hoursWorked || 0}h`, fontSize: 9, bold: true }
-                ]) : [[{ text: 'No hay registros en este periodo', colSpan: 5, alignment: 'center' as any, margin: [0, 10, 0, 10], color: '#64748b' }, {}, {}, {}, {}]]
+                ]) : [[{ text: 'No hay registros en este periodo', colSpan: 5, alignment: 'center' as any, margin: [0, 10, 0, 10] as any, color: '#64748b' }, {}, {}, {}, {}]]
               ]
             },
             layout: {

@@ -5,8 +5,11 @@ import { prisma } from './config/prisma';
 import { createApp } from './index';
 import { initWorkers } from './workers';
 
+// ── Create app ─────────────────────────────────────────────────
+const { app, httpServer } = createApp();
+
 // ═══════════════════════════════════════════════════════════════════
-//  BOOTSTRAP – connects DB then starts HTTP server
+//  BOOTSTRAP – connects DB then starts HTTP server (Local Development)
 // ═══════════════════════════════════════════════════════════════════
 async function bootstrap(): Promise<void> {
   try {
@@ -16,9 +19,6 @@ async function bootstrap(): Promise<void> {
 
     // ── Start Workers ─────────────────────────────────────────────
     initWorkers();
-
-    // ── Create app ─────────────────────────────────────────────────
-    const { httpServer } = createApp();
 
     // ── Start listening ────────────────────────────────────────────
     httpServer.listen(env.PORT, () => {
@@ -60,4 +60,9 @@ async function bootstrap(): Promise<void> {
   }
 }
 
-void bootstrap();
+// Only bootstrap the server if running outside Vercel serverless environment
+if (!process.env.VERCEL) {
+  void bootstrap();
+}
+
+export default app;

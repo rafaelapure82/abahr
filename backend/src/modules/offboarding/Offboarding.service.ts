@@ -56,7 +56,12 @@ export class OffboardingService {
     const where: any = {};
     
     if (query.status) where.status = query.status;
-    if (query.departmentId) where.departmentId = query.departmentId;
+    if (query.employeeId) where.employeeId = query.employeeId;
+    if (query.departmentId) {
+      where.employee = {
+        departmentId: query.departmentId
+      };
+    }
 
     const [data, total] = await Promise.all([
       prisma.offboarding.findMany({

@@ -4,7 +4,7 @@
   "description": "ABA Talent Management – REST API (Node + Express + TypeScript + Prisma)",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node scripts/vercel-build.js",
     "start": "node dist/main.js",
     "dev": "ts-node-dev --respawn --transpile-only --exit-child src/main.ts",
     "lint": "eslint . --ext .ts",
