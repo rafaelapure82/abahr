@@ -1,1 +1,286 @@
-'use client';import { useState, useEffect, useRef } from 'react';import { useRouter } from 'next/navigation';import axios from 'axios';import {   QrCode, User, Clock, ArrowRight, CheckCircle2,   AlertCircle, Loader2, Camera, LogIn} from 'lucide-react';import jsQR from 'jsqr';const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';export default function AttendanceTerminal() {  const router = useRouter();  const [time, setTime] = useState(new Date());  const [mounted, setMounted] = useState(false);  const [method, setMethod] = useState<'qr' | 'manual'>('qr');  const [externalId, setExternalId] = useState('');  const [loading, setLoading] = useState(false);  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);    // Scanner Refs  const videoRef = useRef<HTMLVideoElement>(null);  const canvasRef = useRef<HTMLCanvasElement>(null);  const [isScanning, setIsScanning] = useState(false);  const isStoppingRef = useRef(false);  useEffect(() => {    setMounted(true);    const timer = setInterval(() => setTime(new Date()), 1000);    return () => clearInterval(timer);  }, []);  // Control Scanner  useEffect(() => {    if (method === 'qr') {      startScanner();    } else {      stopScanner();    }    return () => stopScanner();  }, [method]);  const startScanner = async () => {    if (isStoppingRef.current) return;    try {      const stream = await navigator.mediaDevices.getUserMedia({         video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } }       });      if (videoRef.current) {        videoRef.current.srcObject = stream;        videoRef.current.setAttribute('playsinline', 'true');        await videoRef.current.play();        setIsScanning(true);        requestAnimationFrame(tick);      }    } catch (err) {      console.error("Camera error:", err);      setMessage({ type: 'error', text: 'No se pudo acceder a la cÃ¡mara. Verifique los permisos.' });      setMethod('manual');    }  };  const stopScanner = () => {    isStoppingRef.current = true;    if (videoRef.current && videoRef.current.srcObject) {      const stream = videoRef.current.srcObject as MediaStream;      stream.getTracks().forEach(track => track.stop());      videoRef.current.srcObject = null;      setIsScanning(false);    }    setTimeout(() => { isStoppingRef.current = false; }, 500);  };  const tick = () => {    if (!isScanning || loading || !!message) return;    if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && canvasRef.current) {      const canvas = canvasRef.current;      const video = videoRef.current;      canvas.height = video.videoHeight;      canvas.width = video.videoWidth;      const ctx = canvas.getContext('2d', { willReadFrequently: true });      if (ctx) {        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);        const code = jsQR(imageData.data, imageData.width, imageData.height, {          inversionAttempts: 'dontInvert',        });        if (code && code.data) {          handleRegister(code.data);          return;         }      }    }        if (method === 'qr' && !loading && !message) {      requestAnimationFrame(tick);    }  };  const handleRegister = async (id: string) => {    if (loading || !id || !!message) return;    setLoading(true);    stopScanner();    try {      const res = await axios.post(`${API_URL}/attendance/public-register`, {        externalId: id,        date: new Date().toISOString()      });            setMessage({ type: 'success', text: res.data.message || 'Registro exitoso' });      setExternalId('');            setTimeout(() => {        setMessage(null);        setLoading(false);        if (method === 'qr') startScanner();      }, 3000);    } catch (err: any) {      console.error("Registration error:", err);      let errorMsg = 'Error de conexiÃ³n con el servidor';            if (err.response) {        // The request was made and the server responded with a status code        errorMsg = err.response.data?.error?.message || err.response.data?.message || `Error del servidor (${err.response.status})`;      } else if (err.request) {        // The request was made but no response was received        errorMsg = 'No se recibiÃ³ respuesta del servidor. Verifique su conexiÃ³n.';      }      setMessage({ type: 'error', text: errorMsg });            setTimeout(() => {        setMessage(null);        setLoading(false);        if (method === 'qr') startScanner();      }, 4000);    }  };  return (    <main className="min-h-screen bg-[#0f172a] text-white flex flex-col items-center justify-center p-4 overflow-hidden relative">      {/* Background Orbs */}      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 blur-[120px] rounded-full" />      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 blur-[120px] rounded-full" />      {/* Header / Clock */}      <div className="z-10 text-center mb-12 animate-in fade-in slide-in-from-top-4 duration-1000">        <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-2 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">          {mounted ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}        </h1>        <p className="text-slate-400 text-xl font-medium">          {mounted ? time.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Cargando...'}        </p>      </div>      {/* Main Terminal Card */}      <div className="z-10 w-full max-w-xl bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl relative">                {/* Method Toggles */}        <div className="flex p-2 bg-black/20 m-6 rounded-2xl gap-2">          <button             onClick={() => setMethod('qr')}            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 ${method === 'qr' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-white/5'}`}          >            <QrCode className="w-5 h-5" />            <span className="font-semibold">CÃ³digo QR</span>          </button>          <button             onClick={() => setMethod('manual')}            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 ${method === 'manual' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-white/5'}`}          >            <User className="w-5 h-5" />            <span className="font-semibold">CÃ©dula</span>          </button>        </div>        <div className="p-8 pt-2 min-h-[400px] flex flex-col items-center justify-center relative">                    {loading && (            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">              <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />              <p className="text-xl font-bold">Procesando...</p>            </div>          )}          {message && (            <div className={`absolute inset-0 z-50 ${message.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'} flex flex-col items-center justify-center p-8 text-center animate-in zoom-in duration-300`}>              {message.type === 'success' ? <CheckCircle2 className="w-24 h-24 mb-6 animate-bounce" /> : <AlertCircle className="w-24 h-24 mb-6" />}              <h2 className="text-3xl font-black mb-2">{message.type === 'success' ? 'Â¡Ã‰xito!' : 'Error'}</h2>              <p className="text-xl opacity-90">{message.text}</p>            </div>          )}          {method === 'qr' ? (            <div className="w-full aspect-square max-w-[320px] relative rounded-3xl overflow-hidden bg-black ring-4 ring-white/10">              <video ref={videoRef} className="w-full h-full object-cover" />              <canvas ref={canvasRef} className="hidden" />                            {/* Scanner Overlay UI */}              <div className="absolute inset-0 border-[40px] border-black/40">                <div className="w-full h-full border-2 border-blue-500/50 rounded-lg relative">                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-blue-500" />                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-blue-500" />                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-blue-500" />                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-blue-500" />                  <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-scan" />                </div>              </div>              <p className="absolute bottom-6 left-0 right-0 text-center text-sm font-medium text-white/70">                Coloque su cÃ³digo QR frente a la cÃ¡mara              </p>            </div>          ) : (            <div className="w-full space-y-6 animate-in slide-in-from-bottom-4 duration-500">              <div className="text-center mb-8">                <div className="w-20 h-20 bg-blue-500/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-blue-500/20">                  <User className="w-10 h-10 text-blue-500" />                </div>                <h3 className="text-2xl font-bold">Registro Manual</h3>                <p className="text-slate-400">Ingrese su nÃºmero de identificaciÃ³n</p>              </div>              <div className="relative">                <input                   type="text"                   value={externalId}                  onChange={(e) => setExternalId(e.target.value)}                  placeholder="Ej: 12345678"                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-2xl text-center font-bold tracking-widest focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"                  autoFocus                />              </div>              <button                 onClick={() => handleRegister(externalId)}                disabled={!externalId}                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 py-5 rounded-2xl text-xl font-bold transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3 group"              >                Confirmar Registro                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />              </button>            </div>          )}        </div>      </div>      {/* Footer Info / Login Link */}      <div className="z-10 mt-12 flex flex-col items-center gap-6">        <div className="flex items-center gap-4 text-slate-500 font-medium">          <div className="flex items-center gap-2">            <Camera className="w-4 h-4" />            <span>Escaneo en vivo</span>          </div>          <div className="w-1 h-1 bg-slate-700 rounded-full" />          <span>ABA Talent HR v1.0</span>        </div>        <button           onClick={() => router.push('/auth/login')}          className="px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-semibold transition-all flex items-center gap-2"        >          <LogIn className="w-4 h-4" />          Acceso Administrativo        </button>      </div>      <style jsx global>{`        @keyframes scan {          0% { top: 0; }          50% { top: 100%; }          100% { top: 0; }        }        .animate-scan {          animation: scan 3s linear infinite;        }      `}</style>    </main>  );}
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
+import {
+  QrCode, User, ArrowRight, CheckCircle2,
+  AlertCircle, Loader2, Camera, LogIn,
+} from 'lucide-react';
+import jsQR from 'jsqr';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+
+export default function AttendanceTerminal() {
+  const router = useRouter();
+  const [time, setTime] = useState(new Date());
+  const [mounted, setMounted] = useState(false);
+  const [method, setMethod] = useState<'qr' | 'manual'>('qr');
+  const [externalId, setExternalId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const isStoppingRef = useRef(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (method === 'qr') {
+      startScanner();
+    } else {
+      stopScanner();
+    }
+    return () => stopScanner();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [method]);
+
+  const startScanner = async () => {
+    if (isStoppingRef.current) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } },
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
+        await videoRef.current.play();
+        setIsScanning(true);
+        requestAnimationFrame(tick);
+      }
+    } catch (err) {
+      console.error('Camera error:', err);
+      setMessage({ type: 'error', text: 'No se pudo acceder a la cámara. Verifique los permisos.' });
+      setMethod('manual');
+    }
+  };
+
+  const stopScanner = () => {
+    isStoppingRef.current = true;
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+      setIsScanning(false);
+    }
+    setTimeout(() => { isStoppingRef.current = false; }, 500);
+  };
+
+  const tick = () => {
+    if (!isScanning || loading || !!message) return;
+    if (
+      videoRef.current &&
+      videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA &&
+      canvasRef.current
+    ) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
+        if (code && code.data) {
+          handleRegister(code.data);
+          return;
+        }
+      }
+    }
+    if (method === 'qr' && !loading && !message) {
+      requestAnimationFrame(tick);
+    }
+  };
+
+  const handleRegister = async (id: string) => {
+    if (loading || !id || !!message) return;
+    setLoading(true);
+    stopScanner();
+    try {
+      const res = await axios.post(`${API_URL}/attendance/public-register`, {
+        externalId: id,
+        date: new Date().toISOString(),
+      });
+      setMessage({ type: 'success', text: res.data.message || 'Registro exitoso' });
+      setExternalId('');
+      setTimeout(() => {
+        setMessage(null);
+        setLoading(false);
+        if (method === 'qr') startScanner();
+      }, 3000);
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      let errorMsg = 'Error de conexión con el servidor';
+      if (err.response) {
+        errorMsg = err.response.data?.error?.message || err.response.data?.message || `Error del servidor (${err.response.status})`;
+      } else if (err.request) {
+        errorMsg = 'No se recibió respuesta del servidor. Verifique su conexión.';
+      }
+      setMessage({ type: 'error', text: errorMsg });
+      setTimeout(() => {
+        setMessage(null);
+        setLoading(false);
+        if (method === 'qr') startScanner();
+      }, 4000);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-[#0f172a] text-white flex flex-col items-center justify-center p-4 overflow-hidden relative">
+      <style>{`
+        @keyframes scan {
+          0% { top: 0; }
+          50% { top: 100%; }
+          100% { top: 0; }
+        }
+        .animate-scan {
+          animation: scan 3s linear infinite;
+        }
+      `}</style>
+
+      {/* Background Orbs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 blur-[120px] rounded-full" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 blur-[120px] rounded-full" />
+
+      {/* Header / Clock */}
+      <div className="z-10 text-center mb-12 animate-in fade-in slide-in-from-top-4 duration-1000">
+        <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-2 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
+          {mounted ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+        </h1>
+        <p className="text-slate-400 text-xl font-medium">
+          {mounted
+            ? time.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+            : 'Cargando...'}
+        </p>
+      </div>
+
+      {/* Main Terminal Card */}
+      <div className="z-10 w-full max-w-xl bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+        {/* Method Toggles */}
+        <div className="flex p-2 bg-black/20 m-6 rounded-2xl gap-2">
+          <button
+            onClick={() => setMethod('qr')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 ${
+              method === 'qr'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                : 'text-slate-400 hover:bg-white/5'
+            }`}
+          >
+            <QrCode className="w-5 h-5" />
+            <span className="font-semibold">Código QR</span>
+          </button>
+          <button
+            onClick={() => setMethod('manual')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 ${
+              method === 'manual'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                : 'text-slate-400 hover:bg-white/5'
+            }`}
+          >
+            <User className="w-5 h-5" />
+            <span className="font-semibold">Cédula</span>
+          </button>
+        </div>
+
+        <div className="p-8 pt-2 min-h-[400px] flex flex-col items-center justify-center relative">
+          {loading && (
+            <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
+              <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+              <p className="text-xl font-bold">Procesando...</p>
+            </div>
+          )}
+          {message && (
+            <div
+              className={`absolute inset-0 z-50 ${
+                message.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'
+              } flex flex-col items-center justify-center p-8 text-center animate-in zoom-in duration-300`}
+            >
+              {message.type === 'success' ? (
+                <CheckCircle2 className="w-24 h-24 mb-6 animate-bounce" />
+              ) : (
+                <AlertCircle className="w-24 h-24 mb-6" />
+              )}
+              <h2 className="text-3xl font-black mb-2">{message.type === 'success' ? '¡Éxito!' : 'Error'}</h2>
+              <p className="text-xl opacity-90">{message.text}</p>
+            </div>
+          )}
+
+          {method === 'qr' ? (
+            <div className="w-full aspect-square max-w-[320px] relative rounded-3xl overflow-hidden bg-black ring-4 ring-white/10">
+              <video ref={videoRef} className="w-full h-full object-cover" />
+              <canvas ref={canvasRef} className="hidden" />
+              <div className="absolute inset-0 border-[40px] border-black/40">
+                <div className="w-full h-full border-2 border-blue-500/50 rounded-lg relative">
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-blue-500" />
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-blue-500" />
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-blue-500" />
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-blue-500" />
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-scan" />
+                </div>
+              </div>
+              <p className="absolute bottom-6 left-0 right-0 text-center text-sm font-medium text-white/70">
+                Coloque su código QR frente a la cámara
+              </p>
+            </div>
+          ) : (
+            <div className="w-full space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-blue-500/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
+                  <User className="w-10 h-10 text-blue-500" />
+                </div>
+                <h3 className="text-2xl font-bold">Registro Manual</h3>
+                <p className="text-slate-400">Ingrese su número de identificación</p>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={externalId}
+                  onChange={(e) => setExternalId(e.target.value)}
+                  placeholder="Ej: 12345678"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-2xl text-center font-bold tracking-widest focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all placeholder:text-slate-600"
+                  autoFocus
+                />
+              </div>
+              <button
+                onClick={() => handleRegister(externalId)}
+                disabled={!externalId}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 py-5 rounded-2xl text-xl font-bold transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3 group"
+              >
+                Confirmar Registro
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="z-10 mt-12 flex flex-col items-center gap-6">
+        <div className="flex items-center gap-4 text-slate-500 font-medium">
+          <div className="flex items-center gap-2">
+            <Camera className="w-4 h-4" />
+            <span>Escaneo en vivo</span>
+          </div>
+          <div className="w-1 h-1 bg-slate-700 rounded-full" />
+          <span>ABA Talent HR v1.0</span>
+        </div>
+        <button
+          onClick={() => router.push('/auth/login')}
+          className="px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-semibold transition-all flex items-center gap-2"
+        >
+          <LogIn className="w-4 h-4" />
+          Acceso Administrativo
+        </button>
+      </div>
+    </main>
+  );
+}
