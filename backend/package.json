@@ -5,6 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "node scripts/vercel-build.js",
+    "postinstall": "prisma generate",
     "start": "node dist/main.js",
     "dev": "ts-node-dev --respawn --transpile-only --exit-child src/main.ts",
     "lint": "eslint . --ext .ts",
