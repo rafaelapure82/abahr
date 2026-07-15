@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -92,7 +92,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         <div className="space-y-4">
           <div className="flex items-center gap-4 mb-4">
             <Link href="/dashboard/recruitment" className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all">
-              <Briefcase className="w-3.5 h-3.5" /> Módulo de Reclutamiento
+              <Briefcase className="w-3.5 h-3.5" /> MÃ³dulo de Reclutamiento
             </Link>
             <Link href="/dashboard/recruitment" className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-primary transition-all">
               <ChevronLeft className="w-4 h-4" /> Volver a Vacantes
@@ -141,7 +141,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         {[
           { id: 'pipeline', name: 'Pipeline de Candidatos', icon: <TrendingUp className="w-4 h-4" /> },
           { id: 'details', name: 'Detalles del Puesto', icon: <FileText className="w-4 h-4" /> },
-          { id: 'settings', name: 'Configuración', icon: <MoreVertical className="w-4 h-4" /> }
+          { id: 'settings', name: 'ConfiguraciÃ³n', icon: <MoreVertical className="w-4 h-4" /> }
         ].map(tab => (
           <button 
             key={tab.id}
@@ -228,7 +228,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                     <div className="p-2 bg-slate-50 group-hover:bg-primary/10 rounded-xl transition-all">
                       <Plus className="w-5 h-5 group-hover:scale-125 transition-transform" />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Añadir Candidato</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">AÃ±adir Candidato</span>
                   </button>
                 </div>
               </div>
@@ -243,7 +243,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
             <section className="card-premium p-8 bg-white border border-slate-100 shadow-xl shadow-slate-200/40">
               <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-3">
                 <div className="p-2 bg-blue-50 rounded-xl"><FileText className="w-5 h-5 text-blue-500" /></div>
-                Descripción del Puesto
+                DescripciÃ³n del Puesto
               </h3>
               <div className="prose prose-slate max-w-none text-slate-600 font-medium whitespace-pre-wrap">
                 {job?.description}
@@ -270,14 +270,14 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
           
           <div className="space-y-6">
             <div className="card-premium p-6 bg-gradient-to-br from-primary to-indigo-600 text-white shadow-xl shadow-primary/20">
-              <h4 className="text-sm font-black uppercase tracking-widest opacity-80 mb-4">Métricas Rápidas</h4>
+              <h4 className="text-sm font-black uppercase tracking-widest opacity-80 mb-4">MÃ©tricas RÃ¡pidas</h4>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold opacity-80">Conversión</span>
+                  <span className="text-xs font-bold opacity-80">ConversiÃ³n</span>
                   <span className="text-lg font-black">12.5%</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold opacity-80">Días Abierta</span>
+                  <span className="text-xs font-bold opacity-80">DÃ­as Abierta</span>
                   <span className="text-lg font-black">24d</span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -369,12 +369,12 @@ function AddCandidateModal({ jobId, defaultStage, onClose, onSave }: any) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Correo Electrónico</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Correo ElectrÃ³nico</label>
             <input required type="email" className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Título / Cargo Actual</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">TÃ­tulo / Cargo Actual</label>
             <input required type="text" className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none" placeholder="Ej: Senior Frontend Engineer" value={formData.currentTitle} onChange={e => setFormData({...formData, currentTitle: e.target.value})} />
           </div>
 
@@ -390,7 +390,7 @@ function AddCandidateModal({ jobId, defaultStage, onClose, onSave }: any) {
 
 function ScheduleInterviewModal({ application, onClose, onSave }: any) {
   const [formData, setFormData] = useState({
-    title: `Entrevista Técnica - ${application.candidate.firstName}`,
+    title: `Entrevista TÃ©cnica - ${application.candidate.firstName}`,
     scheduledAt: '',
     time: '10:00',
     interviewerIds: [] as string[]
@@ -448,7 +448,7 @@ function ScheduleInterviewModal({ application, onClose, onSave }: any) {
 
         <form onSubmit={handleSubmit} className="p-10 space-y-8">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Título de la Entrevista</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">TÃ­tulo de la Entrevista</label>
             <input required type="text" className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-purple-200 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
           </div>
 
@@ -542,7 +542,7 @@ function CandidateCard({ app, onMove, onSchedule, onDragStart, onDragEnd }: any)
           {showMenu && (
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-[1.5rem] shadow-2xl border border-slate-100 p-2 z-50 animate-in zoom-in-95 duration-200">
               <div className="px-4 py-2 border-b border-slate-50 mb-1">
-                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Acciones Rápidas</p>
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Acciones RÃ¡pidas</p>
               </div>
               <button onClick={() => onMove('SCREENING')} className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 hover:text-primary rounded-xl transition-all flex items-center gap-3">
                 <ArrowRight className="w-4 h-4" /> Screening

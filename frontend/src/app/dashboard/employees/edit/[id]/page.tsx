@@ -9,7 +9,7 @@ import {
   AlertCircle, CheckCircle2
 } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 export default function EditEmployeePage() {
   const { id } = useParams();
@@ -76,7 +76,7 @@ export default function EditEmployeePage() {
       });
     } catch (error) {
       console.error("Error fetching employee:", error);
-      setStatus({ type: 'error', message: 'No se pudo cargar la información.' });
+      setStatus({ type: 'error', message: 'No se pudo cargar la informaciÃ³n.' });
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +99,7 @@ export default function EditEmployeePage() {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setStatus({ type: 'success', message: '¡Expediente actualizado y auditado correctamente!' });
+      setStatus({ type: 'success', message: 'Â¡Expediente actualizado y auditado correctamente!' });
       setTimeout(() => router.push(`/dashboard/employees/${id}`), 1500);
     } catch (error: any) {
       console.error("Error updating:", error);
@@ -129,7 +129,7 @@ export default function EditEmployeePage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section: Identity */}
-        <CardSection icon={<User className="text-primary" />} title="Identidad Básica">
+        <CardSection icon={<User className="text-primary" />} title="Identidad BÃ¡sica">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField label="Nombre" name="firstName" value={formData.firstName} onChange={handleChange} required />
             <FormField label="Apellido" name="lastName" value={formData.lastName} onChange={handleChange} required />
@@ -138,12 +138,12 @@ export default function EditEmployeePage() {
         </CardSection>
 
         {/* Section: Bank Info */}
-        <CardSection icon={<CreditCard className="text-amber-500" />} title="Información de Nómina / Banco">
+        <CardSection icon={<CreditCard className="text-amber-500" />} title="InformaciÃ³n de NÃ³mina / Banco">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField label="Banco" name="bankName" value={formData.bankName} onChange={handleChange} placeholder="Ej. Banco Mercantil" />
-            <FormField label="Número de Cuenta" name="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleChange} placeholder="0105..." />
+            <FormField label="NÃºmero de Cuenta" name="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleChange} placeholder="0105..." />
             <FormField label="Salario Mensual ($)" name="baseSalary" type="number" value={formData.baseSalary} onChange={handleChange} />
-            <FormField label="RIF / Identificación Fiscal" name="taxId" value={formData.taxId} onChange={handleChange} placeholder="J-12345678-9" />
+            <FormField label="RIF / IdentificaciÃ³n Fiscal" name="taxId" value={formData.taxId} onChange={handleChange} placeholder="J-12345678-9" />
           </div>
         </CardSection>
 
@@ -153,17 +153,17 @@ export default function EditEmployeePage() {
             <FormField label="Nombre del Contacto" name="emergencyName" value={formData.emergencyName} onChange={handleChange} />
             <FormField label="Parentesco" name="emergencyRelation" value={formData.emergencyRelation} onChange={handleChange} placeholder="Madre, Esposa, etc." />
             <div className="md:col-span-2">
-              <FormField label="Teléfono de Emergencia" name="emergencyPhone" value={formData.emergencyPhone} onChange={handleChange} />
+              <FormField label="TelÃ©fono de Emergencia" name="emergencyPhone" value={formData.emergencyPhone} onChange={handleChange} />
             </div>
           </div>
         </CardSection>
 
         {/* Section: Contact & Location */}
-        <CardSection icon={<MapPin className="text-teal-500" />} title="Contacto y Ubicación">
+        <CardSection icon={<MapPin className="text-teal-500" />} title="Contacto y UbicaciÃ³n">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField label="Email Personal" name="personalEmail" value={formData.personalEmail} onChange={handleChange} />
-            <FormField label="Teléfono Personal" name="personalPhone" value={formData.personalPhone} onChange={handleChange} />
-            <FormField label="País" name="country" value={formData.country} onChange={handleChange} />
+            <FormField label="TelÃ©fono Personal" name="personalPhone" value={formData.personalPhone} onChange={handleChange} />
+            <FormField label="PaÃ­s" name="country" value={formData.country} onChange={handleChange} />
             <FormField label="Ciudad" name="city" value={formData.city} onChange={handleChange} />
           </div>
         </CardSection>

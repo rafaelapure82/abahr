@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 export default function CandidateDetailPage({ params }: { params: Promise<{ appId: string }> }) {
   const { appId } = use(params);
@@ -110,7 +110,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ appI
           <div>
             <div className="flex items-center gap-4 mb-2">
               <Link href="/dashboard/recruitment" className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all">
-                <Briefcase className="w-3.5 h-3.5" /> Módulo de Reclutamiento
+                <Briefcase className="w-3.5 h-3.5" /> MÃ³dulo de Reclutamiento
               </Link>
               <Link href={`/dashboard/recruitment/${job?.id}`} className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-primary transition-colors">
                 <ChevronLeft className="w-3.5 h-3.5" /> Volver al Pipeline
@@ -118,7 +118,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ appI
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">{candidate?.firstName} {candidate?.lastName}</h1>
             <p className="text-slate-500 mt-2 font-bold flex items-center gap-2">
-              {candidate?.currentTitle} <span className="text-slate-300">•</span> {candidate?.currentCompany || 'Candidato Externo'}
+              {candidate?.currentTitle} <span className="text-slate-300">â€¢</span> {candidate?.currentCompany || 'Candidato Externo'}
             </p>
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ appI
               </div>
               <div className="space-y-2">
                 <p className="text-xs font-bold leading-relaxed opacity-90">
-                  "Candidato con fuerte dominio técnico en arquitecturas distribuidas. Alta compatibilidad cultural con valores de agilidad."
+                  "Candidato con fuerte dominio tÃ©cnico en arquitecturas distribuidas. Alta compatibilidad cultural con valores de agilidad."
                 </p>
                 <div className="flex flex-wrap gap-2 pt-2">
                   <span className="text-[9px] font-black px-2 py-1 bg-white/20 rounded-lg uppercase tracking-tighter">Hard Skills 10/10</span>
@@ -178,11 +178,11 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ appI
 
           <section className="card-premium p-8 bg-white border border-slate-100 shadow-xl shadow-slate-200/40 space-y-6">
             <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-              <User className="w-4 h-4 text-primary" /> Información de Contacto
+              <User className="w-4 h-4 text-primary" /> InformaciÃ³n de Contacto
             </h3>
             <div className="space-y-4">
               <ContactItem icon={<Mail />} label="Email" value={candidate?.email} />
-              <ContactItem icon={<Phone />} label="Teléfono" value={candidate?.phone} />
+              <ContactItem icon={<Phone />} label="TelÃ©fono" value={candidate?.phone} />
               <ContactItem icon={<Globe />} label="Portfolio" value={candidate?.portfolioUrl} isLink />
               <ContactItem icon={<Globe />} label="GitHub" value={candidate?.githubUrl} isLink />
             </div>
@@ -220,7 +220,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ appI
                 </div>
               </div>
               <div className="text-right">
-                <h4 className="text-xs font-black uppercase tracking-[0.2em] opacity-60 mb-2">Fecha de Aplicación</h4>
+                <h4 className="text-xs font-black uppercase tracking-[0.2em] opacity-60 mb-2">Fecha de AplicaciÃ³n</h4>
                 <p className="text-lg font-black">{new Date(app?.appliedAt).toLocaleDateString()}</p>
               </div>
             </div>
@@ -229,13 +229,13 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ appI
           {/* Timeline */}
           <section className="card-premium p-8 bg-white border border-slate-100 shadow-xl shadow-slate-200/40">
             <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-3">
-              <Clock className="w-5 h-5 text-primary" /> Historial de Selección
+              <Clock className="w-5 h-5 text-primary" /> Historial de SelecciÃ³n
             </h3>
             <div className="space-y-8 relative before:absolute before:left-[1.25rem] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
               <TimelineItem 
-                title="Aplicación Recibida"
+                title="AplicaciÃ³n Recibida"
                 date={new Date(app?.appliedAt).toLocaleString()}
-                description="El candidato envió su CV a través del portal de empleo."
+                description="El candidato enviÃ³ su CV a travÃ©s del portal de empleo."
                 icon={<Mail className="w-4 h-4" />}
                 status="COMPLETED"
               />
@@ -255,11 +255,11 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ appI
           {/* Files */}
           <section className="card-premium p-8 bg-white border border-slate-100 shadow-xl shadow-slate-200/40">
             <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-3">
-              <FileText className="w-5 h-5 text-primary" /> Documentación
+              <FileText className="w-5 h-5 text-primary" /> DocumentaciÃ³n
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <FileCard name="Curriculum Vitae" type="PDF" url={candidate?.resumeUrl} />
-              <FileCard name="Carta de Presentación" type="DOCX" url={candidate?.coverLetterUrl} />
+              <FileCard name="Carta de PresentaciÃ³n" type="DOCX" url={candidate?.coverLetterUrl} />
             </div>
           </section>
         </div>
@@ -412,12 +412,12 @@ function InterviewModal({ onClose, onSave }: any) {
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Título de la Sesión</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">TÃ­tulo de la SesiÃ³n</label>
             <input 
               required
               type="text" 
               className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
-              placeholder="Ej: Entrevista Técnica Round 1"
+              placeholder="Ej: Entrevista TÃ©cnica Round 1"
               value={formData.title}
               onChange={(e) => setFormData({...formData, title: e.target.value})}
             />
@@ -442,7 +442,7 @@ function InterviewModal({ onClose, onSave }: any) {
                 onChange={(e) => setFormData({...formData, type: e.target.value})}
               >
                 <option value="VIDEO">Video Llamada</option>
-                <option value="PHONE">Telefónica</option>
+                <option value="PHONE">TelefÃ³nica</option>
                 <option value="ONSITE">Presencial</option>
                 <option value="PANEL">Panel / Grupal</option>
               </select>
@@ -450,11 +450,11 @@ function InterviewModal({ onClose, onSave }: any) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Ubicación / Link</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">UbicaciÃ³n / Link</label>
             <input 
               type="text" 
               className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none"
-              placeholder="Google Meet, Zoom o Dirección Física"
+              placeholder="Google Meet, Zoom o DirecciÃ³n FÃ­sica"
               value={formData.location}
               onChange={(e) => setFormData({...formData, location: e.target.value})}
             />

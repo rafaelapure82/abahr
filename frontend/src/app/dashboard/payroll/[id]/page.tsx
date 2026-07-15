@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { getAvatarUrl } from '@/lib/utils';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 export default function PayrollDetailPage() {
   const { id } = useParams();
@@ -40,7 +40,7 @@ export default function PayrollDetailPage() {
   };
 
   const handleApprove = async () => {
-    if (!confirm('¿Estás seguro de aprobar esta nómina? Una vez aprobada, los registros de pago serán inmutables.')) return;
+    if (!confirm('Â¿EstÃ¡s seguro de aprobar esta nÃ³mina? Una vez aprobada, los registros de pago serÃ¡n inmutables.')) return;
     setApproving(true);
     try {
       const token = localStorage.getItem('access_token');
@@ -50,7 +50,7 @@ export default function PayrollDetailPage() {
       fetchData();
     } catch (error) {
       console.error("Error approving payroll:", error);
-      alert('Error al aprobar la nómina');
+      alert('Error al aprobar la nÃ³mina');
     } finally {
       setApproving(false);
     }
@@ -66,7 +66,7 @@ export default function PayrollDetailPage() {
   if (!payroll) return (
     <div className="h-[60vh] flex flex-col items-center justify-center gap-4 text-center">
       <AlertCircle className="w-12 h-12 text-red-500" />
-      <h2 className="text-xl font-bold">Nómina no encontrada</h2>
+      <h2 className="text-xl font-bold">NÃ³mina no encontrada</h2>
       <button onClick={() => router.back()} className="btn-primary px-6 py-2 mt-4">Volver</button>
     </div>
   );
@@ -80,7 +80,7 @@ export default function PayrollDetailPage() {
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Detalle de Nómina</h1>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Detalle de NÃ³mina</h1>
             <p className="text-slate-500 font-medium text-sm">Periodo: {new Date(payroll.periodStart).toLocaleDateString()} - {new Date(payroll.periodEnd).toLocaleDateString()}</p>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function PayrollDetailPage() {
             </button>
           ) : (
             <div className="px-8 py-3 bg-emerald-50 text-emerald-600 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 border border-emerald-100">
-              <CheckCircle2 className="w-4 h-4" /> NÓMINA PAGADA
+              <CheckCircle2 className="w-4 h-4" /> NÃ“MINA PAGADA
             </div>
           )}
         </div>
@@ -207,24 +207,24 @@ export default function PayrollDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="card-premium bg-white p-8 space-y-6">
           <h4 className="font-black text-xs uppercase tracking-widest text-slate-400 flex items-center gap-2">
-            <Info className="w-4 h-4" /> Notas de Auditoría
+            <Info className="w-4 h-4" /> Notas de AuditorÃ­a
           </h4>
           <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400 font-medium">Creado por</span>
-              <span className="font-black text-slate-700">{payroll.processedBy || 'Sistema Automático'}</span>
+              <span className="font-black text-slate-700">{payroll.processedBy || 'Sistema AutomÃ¡tico'}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400 font-medium">Fecha de Generación</span>
+              <span className="text-slate-400 font-medium">Fecha de GeneraciÃ³n</span>
               <span className="font-black text-slate-700">{new Date(payroll.createdAt).toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400 font-medium">Última Modificación</span>
+              <span className="text-slate-400 font-medium">Ãšltima ModificaciÃ³n</span>
               <span className="font-black text-slate-700">{new Date(payroll.updatedAt).toLocaleString()}</span>
             </div>
           </div>
           <p className="text-xs text-slate-400 italic">
-            * Este lote incluye cálculos basados en {payroll.items?.length || 0} contratos activos y registros de asistencia procesados hasta la fecha.
+            * Este lote incluye cÃ¡lculos basados en {payroll.items?.length || 0} contratos activos y registros de asistencia procesados hasta la fecha.
           </p>
         </div>
 
@@ -234,7 +234,7 @@ export default function PayrollDetailPage() {
           </div>
           <h4 className="text-xl font-bold text-slate-800">Cierre de Periodo</h4>
           <p className="text-sm text-slate-400 max-w-xs">
-            Una vez aprobada la nómina, se generarán los asientos contables y se enviarán las notificaciones de pago a los empleados.
+            Una vez aprobada la nÃ³mina, se generarÃ¡n los asientos contables y se enviarÃ¡n las notificaciones de pago a los empleados.
           </p>
           {!payroll.approvedAt && (
             <button 
